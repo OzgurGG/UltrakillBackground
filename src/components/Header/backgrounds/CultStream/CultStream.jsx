@@ -100,7 +100,7 @@ export default function CultStream({ layer = 'back' }) {
 
          ctx.textAlign = 'center';
          ctx.textBaseline = 'middle';
-         ctx.font = 'bold 14px "Share Tech Mono", monospace';
+         ctx.font = 'bold 14px monospace';
 
          // === STREAM GÜNCELLEME (SAĞDAN SOLA) ===
          for (let r = 0; r < rows; r++) {
