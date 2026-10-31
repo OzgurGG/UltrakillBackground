@@ -3,9 +3,12 @@
   align-items: center;
   justify-content: space-between;
   height: 90px;
-  border-bottom: 1px solid #333;
-  padding: 0 20px;
+  border-bottom: 2px solid #5a1010;
+  padding: 0 24px;
   box-sizing: border-box;
+  background-color: rgba(7, 1, 1, 0.85);
+  position: relative;
+  z-index: 10;
 }
 
 .header-left {
@@ -13,7 +16,7 @@
   flex-direction: column;
   justify-content: center;
   gap: 8px;
-  width: 260px;
+  width: 270px;
   flex-shrink: 0;
 }
 
@@ -26,7 +29,7 @@
 .header-separator {
   width: 1px;
   height: 100%;
-  background-color: #333;
+  background-color: #5a1010;
 }
 
 .header-right {
@@ -39,8 +42,8 @@
 /* Discord Profil Alanı */
 .avatar-konteyner {
   position: relative;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
 }
 
@@ -49,7 +52,7 @@
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  border: 1px solid #444;
+  border: 1.5px solid #8f1f1f;
 }
 
 .durum-yuvarlagi {
@@ -59,7 +62,7 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  border: 2px solid #0d0d0d;
+  border: 2px solid #070101;
 }
 
 .durum-online { background-color: #43b581; }
@@ -69,9 +72,12 @@
 
 /* Logo */
 .logo {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: bold;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
+  color: #ff3b3b;
+  text-shadow: 0 0 6px rgba(255, 60, 60, 0.5);
+  font-family: 'Share Tech Mono', monospace;
 }
 
 /* Spotify / Müzik */
@@ -87,11 +93,13 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #ff9999;
 }
 
 .muzik-basit-zaman {
-  color: #888;
+  color: #aa4444;
   font-size: 11px;
+  letter-spacing: 1px;
 }
 
 .muzik-alani-eski {
@@ -99,7 +107,7 @@
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  color: #888;
+  color: #aa4444;
 }
 
 @media (max-width: 768px) {

@@ -3,47 +3,50 @@ import './CRTFilter.css';
 import { crtConfig } from '../../config/crtConfig';
 
 /**
- * CRTFilter - Kırmızı Fosforlu Retro Monitör Efekti
+ * CRTFilter - Referans Görseldeki Bombeli Tüplü TV Monitörü
  * 
- * - Rastgele gürültü (noise) veya hareketli çizgiler içermez.
- * - Referans görseldeki gibi temiz, net, geometrik mikro fosfor ızgarası (dot-matrix) uygular.
- * - Bombeli monitör kasası, köşe kararması ve kırmızı katot ışıması sağlar.
+ * - Ekranın 4 kenarı da (üst, alt, sol, sağ) SVG clipPath ile gerçek bir tüplü TV gibi dışa doğru kavislenir (barrel bulge).
+ * - Köşeler içeriye doğru çekilirken orta kısımlar dışa doğru kabarır.
+ * - 3x3px net mikro fosfor ızgarası (dot-matrix) ve derin dışbükey cam gölgesi (vignette) içerir.
+ * - Sıfır rastgele noise / sıfır hareketli parazit.
  */
 export default function CRTFilter({ children }) {
-  // CSS değişkenleri
   const cssVars = useMemo(() => ({
-    '--crt-grid-opacity': crtConfig.phosphorGrid,
-    '--crt-vignette-opacity': crtConfig.vignette,
+    '--crt-grid-opacity': crtConfig.phosphorGrid ?? 0.45,
+    '--crt-vignette-opacity': crtConfig.vignette ?? 0.88,
   }), []);
-
-  // İçeriğe uygulanan kırmızı fosfor ışıması (bloom)
-  const viewportFilter = useMemo(() => {
-    if (crtConfig.glow <= 0) return undefined;
-    return `contrast(1.08) brightness(1.15) drop-shadow(0 0 2px rgba(255, 50, 50, ${crtConfig.glow * 0.7}))`;
-  }, []);
 
   return (
     <div
-      className={`crt-terminal-root ${crtConfig.monitorFrame ? 'has-frame' : 'full-screen'}`}
+      className={`crt-monitor-casing ${crtConfig.monitorFrame ? 'has-casing' : 'full-screen'}`}
       style={cssVars}
     >
-      {/* Monitör Kasası */}
-      <div className="crt-monitor-casing">
-        {/* Bombeli Tüp Camı */}
-        <div className="crt-tube-glass">
-          {/* Sayfa Elemanları (Header ve Labirent) */}
-          <div className="crt-viewport" style={{ filter: viewportFilter }}>
+      {/* Tüplü TV Fıçı Kavis Maskesi: 4 kenar da yay çizer */}
+      <svg width="0" height="0" style={{ position: 'absolute', pointerEvents: 'none' }}>
+        <defs>
+          <clipPath id="crt-tube-clip" clipPathUnits="objectBoundingBox">
+            <path d="M 0.03,0.05 Q 0.5,0.008 0.97,0.05 Q 0.992,0.5 0.97,0.95 Q 0.5,0.992 0.03,0.95 Q 0.008,0.5 0.03,0.05 Z" />
+          </clipPath>
+        </defs>
+      </svg>
+
+      {/* Monitör Kasası / Bezel */}
+      <div className="crt-bezel-outer">
+        {/* Bombeli Katot Tüpü Camı (Tüm kenarları kavisli tüplü ekran) */}
+        <div className="crt-curved-screen">
+          {/* İçerik Sahnesi (Header, Lanyard, Labirent) */}
+          <div className="crt-content-stage">
             {children}
           </div>
 
-          {/* 1. Mikroskobik Fosfor Hücre Izgarası (Görseldeki net CRT SCREEN ızgarası) */}
+          {/* 1. Mikroskobik Fosfor Hücre Izgarası (Görseldeki net CRT SCREEN piksel ağı) */}
           {crtConfig.phosphorGrid > 0 && <div className="crt-phosphor-grid" />}
 
-          {/* 2. Tüp Köşe Kararması */}
-          {crtConfig.vignette > 0 && <div className="crt-vignette" />}
+          {/* 2. 3D Tüp Bombesi ve Köşe Kararması (Dışbükey Cam Derinliği) */}
+          {crtConfig.vignette > 0 && <div className="crt-vignette-bulge" />}
 
-          {/* 3. Cam Yansıma Işığı */}
-          {crtConfig.reflection && <div className="crt-glass-glare" />}
+          {/* 3. Bombeli Cam Yüzey Işıltısı */}
+          {crtConfig.reflection && <div className="crt-glass-specular" />}
         </div>
       </div>
     </div>
