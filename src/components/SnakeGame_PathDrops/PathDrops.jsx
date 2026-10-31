@@ -76,11 +76,8 @@ function cardBg(a) { return `rgba(7,7,11,${a})`; }
 function cardBorder(a) { return `rgba(115,110,132,${a})`; }
 function cardText(a) { return `rgba(175,170,192,${a})`; }
 
-export default function PathDrops() {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const cvs = canvasRef.current; if (!cvs) return;
+export function initPathDrops(cvs) {
+  if (!cvs) return () => {};
     const ctx = cvs.getContext('2d');
     let raf, w, h, cols, rows;
     let grid = [], drops = [];
@@ -136,8 +133,11 @@ export default function PathDrops() {
       drops = []; nodes = []; dirtySet.clear();
     }
     build();
-    const ro = new ResizeObserver(build);
-    ro.observe(cvs.parentElement);
+    let ro = null;
+    if (cvs.parentElement) {
+      ro = new ResizeObserver(build);
+      ro.observe(cvs.parentElement);
+    }
 
     let lastTime = performance.now();
 
@@ -646,21 +646,20 @@ export default function PathDrops() {
     }
 
     raf = requestAnimationFrame(loop);
-    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
-  }, []);
+    return () => {
+      cancelAnimationFrame(raf);
+      if (ro) ro.disconnect();
+    };
+}
 
+export default function PathDrops() {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    return initPathDrops(canvasRef.current);
+  }, []);
   return (
-    <div style={{
-      position: 'absolute', inset: 0, overflow: 'hidden',
-      backgroundColor: '#07070a'
-    }}>
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', backgroundColor: '#07070a' }}>
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: 'linear-gradient(rgba(255,255,255,0.01) 50%,rgba(0,0,0,0.07) 50%)',
-        backgroundSize: '100% 4px',
-        opacity: 0.3,
-      }} />
     </div>
   );
 }
