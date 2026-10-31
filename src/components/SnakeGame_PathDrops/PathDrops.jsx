@@ -658,7 +658,7 @@ export default function PathDrops() {
     return initPathDrops(canvasRef.current);
   }, []);
   return (
-    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', backgroundColor: '#07070a' }}>
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', backgroundColor: '#000000' }}>
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
     </div>
   );

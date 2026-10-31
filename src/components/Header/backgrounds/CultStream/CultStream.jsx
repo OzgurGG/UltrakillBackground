@@ -89,7 +89,7 @@ export function initCultStream(cvs, layer = 'back') {
       lastTime = now;
 
       if (layer === 'back') {
-         ctx.fillStyle = '#050202';
+         ctx.fillStyle = '#000000';
          ctx.fillRect(0, 0, w, h);
       } else {
          ctx.clearRect(0, 0, w, h);

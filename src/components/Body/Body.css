@@ -2,7 +2,7 @@
   position: relative;
   width: 100%;
   flex: 1;
-  background-color: #050202;
+  background-color: #000000;
   overflow: hidden;
   display: flex;
 }
@@ -24,3 +24,20 @@
   pointer-events: auto;
 }
 
+/* Köşeye yerleştirilen kare panel kapsayıcısı */
+.corner-panel-container {
+  position: absolute;
+  bottom: 32px;
+  right: 32px;
+  z-index: 30;
+}
+
+@media (max-width: 640px) {
+  .corner-panel-container {
+    bottom: 20px;
+    right: 20px;
+    left: 20px;
+    display: flex;
+    justify-content: center;
+  }
+}

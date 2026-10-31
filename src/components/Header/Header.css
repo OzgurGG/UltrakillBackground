@@ -2,28 +2,28 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 90px;
+  height: 125px;
   border-bottom: 2px solid #5a1010;
-  padding: 0 24px;
+  padding: 0 32px;
   box-sizing: border-box;
-  background-color: rgba(7, 1, 1, 0.85);
+  background-color: #000000;
   position: relative;
-  z-index: 10;
+  z-index: 20;
 }
 
 .header-left {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 8px;
-  width: 270px;
+  gap: 12px;
+  width: 340px;
   flex-shrink: 0;
 }
 
 .header-left-top {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .header-separator {
@@ -42,8 +42,8 @@
 /* Discord Profil Alanı */
 .avatar-konteyner {
   position: relative;
-  width: 44px;
-  height: 44px;
+  width: 54px;
+  height: 54px;
   flex-shrink: 0;
 }
 
@@ -52,17 +52,17 @@
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  border: 1.5px solid #8f1f1f;
+  border: 2px solid #8f1f1f;
 }
 
 .durum-yuvarlagi {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 12px;
-  height: 12px;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
-  border: 2px solid #070101;
+  border: 2.5px solid #000000;
 }
 
 .durum-online { background-color: #43b581; }
@@ -72,11 +72,11 @@
 
 /* Logo */
 .logo {
-  font-size: 26px;
+  font-size: 32px;
   font-weight: bold;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
   color: #ff3b3b;
-  text-shadow: 0 0 6px rgba(255, 60, 60, 0.5);
+  text-shadow: 0 0 8px rgba(255, 60, 60, 0.5);
   font-family: 'Share Tech Mono', monospace;
 }
 
@@ -84,8 +84,8 @@
 .muzik-alani-basit {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  font-size: 12px;
+  gap: 4px;
+  font-size: 13px;
   overflow: hidden;
 }
 
@@ -94,19 +94,20 @@
   overflow: hidden;
   text-overflow: ellipsis;
   color: #ff9999;
+  letter-spacing: 0.5px;
 }
 
 .muzik-basit-zaman {
   color: #aa4444;
-  font-size: 11px;
-  letter-spacing: 1px;
+  font-size: 12px;
+  letter-spacing: 1.5px;
 }
 
 .muzik-alani-eski {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
+  gap: 8px;
+  font-size: 12px;
   color: #aa4444;
 }
 
