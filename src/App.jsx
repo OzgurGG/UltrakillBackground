@@ -1,13 +1,16 @@
 import React from 'react';
 import './App.css';
-import CRTScreen from './components/CRTScreen/CRTScreen';
 import Header from './components/Header/Header';
+import CRTFilter from './components/CRTFilter/CRTFilter';
 
 function App() {
   return (
-    <CRTScreen>
+    <div className="tum-sayfa">
+      {/* Tüplü Televizyon Ekran Boğumu & Filtresi (Statik CRT Efekti) */}
+      <CRTFilter />
+
       <Header />
-    </CRTScreen>
+    </div>
   );
 }
 
