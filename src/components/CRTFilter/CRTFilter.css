@@ -1,18 +1,41 @@
-/* CRTFilter - Temiz Ekran Filtresi (DOM'a Transform Uygulanmaz) */
+/* CRTFilter - Bütün Ekranı ve İçeriği Büken Tüp Ekranı */
 
-.crt-filter-overlay {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 999;
-  mix-blend-mode: screen;
+.crt-filter-wrapper {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
   overflow: hidden;
+  background-color: #050202;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
-.crt-filter-overlay canvas {
-  display: block;
-  width: 100% !important;
-  height: 100% !important;
+/* Header, Lanyard ve tüm elemanların fiziksel olarak büküldüğü katman */
+.crt-screen-content {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transform-origin: center center;
+  /* Kavis bükümünde kenar taşmalarının pürüzsüz görünmesi için hafif padding */
+  padding: 10px 16px;
+  box-sizing: border-box;
+}
+
+/* Tüplü Televizyon Cam Çerçevesi (Köşeleri ovalleştirir ve tüp camı derinliği verir) */
+.crt-tube-bezel {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  border-radius: 40px / 28px;
+  box-shadow:
+    inset 0 0 140px rgba(0, 0, 0, 0.92),
+    inset 0 0 45px rgba(0, 0, 0, 0.98),
+    0 0 0 100vmax #000000;
 }

@@ -1,114 +1,104 @@
-import React, { useRef, useEffect } from 'react';
-import * as THREE from 'three';
+import React from 'react';
 import { crtConfig } from '../../config/crtConfig';
 import './CRTFilter.css';
 
 /**
- * CRTFilter - Tüplü Televizyon (CRT Tube) Ekran Boğumu & Cam Filtresi
- * 
- * Sıfır hareket, sıfır animasyon.
- * Sadece ekranın o klasik tüplü TV cam bombesini/boğumunu (barrel curvature)
- * ve köşe kararmasını uygular.
+ * Küresel Tüp Bombesi (Barrel Distortion) için Displacement Haritası Üretimi.
+ * Modül yüklendiği anda senkron üretilir; böylece tarayıcı filtresi ilk renderda derlenir.
  */
+function createBarrelMapDataUri(size = 128) {
+  if (typeof document === 'undefined') return '';
 
-const vertexShader = `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = vec4(position, 1.0);
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const imgData = ctx.createImageData(size, size);
+  const data = imgData.data;
+
+  const half = size / 2;
+  for (let y = 0; y < size; y++) {
+    const ny = (y - half) / half; // -1 to 1
+    for (let x = 0; x < size; x++) {
+      const nx = (x - half) / half; // -1 to 1
+      const r2 = nx * nx + ny * ny;
+
+      // Fıçı/Tüp bombesi formülü:
+      // Kenarlardaki pikseller içeriye doğru örneklenerek dışa doğru küresel bombe oluşturulur.
+      const dispX = -nx * r2;
+      const dispY = -ny * r2;
+
+      const r = Math.max(0, Math.min(255, Math.round(128 + dispX * 127)));
+      const g = Math.max(0, Math.min(255, Math.round(128 + dispY * 127)));
+
+      const idx = (y * size + x) * 4;
+      data[idx] = r;       // R: Yatay bükme kanalı
+      data[idx + 1] = g;   // G: Dikey bükme kanalı
+      data[idx + 2] = 128; // B: Nötr
+      data[idx + 3] = 255; // Alpha
+    }
   }
-`;
 
-const fragmentShader = `
-  uniform vec2 uResolution;
-  uniform float uCurvature;
-  uniform float uScanlines;
-  uniform float uVignette;
-  uniform float uGlow;
+  ctx.putImageData(imgData, 0, 0);
+  return canvas.toDataURL('image/png');
+}
 
-  varying vec2 vUv;
+// İlk render anında hazır olması için modül seviyesinde bir kez oluşturulur
+const BARREL_MAP_DATA_URI = createBarrelMapDataUri(128);
 
-  void main() {
-    vec2 uv = vUv;
+/**
+ * CRTFilter - Header, Lanyard ve tüm DOM elemanlarını tüplü TV gibi büken bileşen.
+ * Boş bir overlay çizmek yerine {children} içine gelen her şeyi doğrudan büker.
+ */
+export default function CRTFilter({ children }) {
+  const isCurved = crtConfig.curvature > 0 && BARREL_MAP_DATA_URI;
 
-    // 1. EKRAN BOĞUMU (Tüplü TV Bombesi / Barrel Curvature)
-    vec2 centered = uv - 0.5;
-    float distSq = dot(centered, centered);
-    uv = centered * (1.0 + distSq * uCurvature) + 0.5;
+  return (
+    <div className="crt-filter-wrapper">
+      {/* SVG Küresel Optik Bükme Filtresi */}
+      {isCurved && (
+        <svg
+          className="crt-svg-defs"
+          width="0"
+          height="0"
+          style={{ position: 'absolute', pointerEvents: 'none' }}
+        >
+          <defs>
+            <filter id="crt-barrel-lens" x="-10%" y="-10%" width="120%" height="120%">
+              <feImage
+                href={BARREL_MAP_DATA_URI}
+                xlinkHref={BARREL_MAP_DATA_URI}
+                result="barrelMap"
+                preserveAspectRatio="none"
+                x="-10%"
+                y="-10%"
+                width="120%"
+                height="120%"
+              />
+              <feDisplacementMap
+                in="SourceGraphic"
+                in2="barrelMap"
+                scale={crtConfig.curvature}
+                xChannelSelector="R"
+                yChannelSelector="G"
+              />
+            </filter>
+          </defs>
+        </svg>
+      )}
 
-    // 2. Kavisli CRT Tarama Çizgileri
-    float scanline = sin(uv.y * uResolution.y * 1.5) * uScanlines;
+      {/* Tüp Bombesinden DOĞRUDAN Etkilenen İçerik (Header, Lanyard, vs.) */}
+      <div
+        className="crt-screen-content"
+        style={{
+          filter: isCurved ? 'url(#crt-barrel-lens)' : undefined,
+        }}
+      >
+        {children}
+      </div>
 
-    // 3. Tüplü TV Köşe Karartması (Vignette)
-    float vig = uv.x * uv.y * (1.0 - uv.x) * (1.0 - uv.y);
-    float vignetteFactor = 1.0 - clamp(pow(16.0 * vig, uVignette), 0.0, 1.0);
-
-    // 4. Kenar Cam Işıması
-    float rimGlow = pow(distSq * 2.0, 3.0) * uGlow;
-
-    vec3 color = vec3(rimGlow * 0.4, rimGlow * 0.08, rimGlow * 0.08) - vec3(scanline);
-    float alpha = clamp(vignetteFactor * 0.75 + rimGlow * 0.5 + abs(scanline) * 0.4, 0.0, 0.9);
-
-    gl_FragColor = vec4(color, alpha);
-  }
-`;
-
-export default function CRTFilter() {
-  const mountRef = useRef(null);
-
-  useEffect(() => {
-    const container = mountRef.current;
-    if (!container) return;
-
-    const DPR = Math.min(window.devicePixelRatio || 1, 2);
-    const scene = new THREE.Scene();
-    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
-    renderer.setPixelRatio(DPR);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x000000, 0);
-    container.appendChild(renderer.domElement);
-
-    const material = new THREE.ShaderMaterial({
-      vertexShader,
-      fragmentShader,
-      transparent: true,
-      uniforms: {
-        uResolution: { value: new THREE.Vector2(window.innerWidth * DPR, window.innerHeight * DPR) },
-        uCurvature: { value: crtConfig.curvature },
-        uScanlines: { value: crtConfig.scanlineIntensity },
-        uVignette: { value: crtConfig.vignette },
-        uGlow: { value: crtConfig.glow },
-      },
-    });
-
-    const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
-    scene.add(quad);
-
-    // Statik render (sürekli hareket eden döngü yok)
-    renderer.render(scene, camera);
-
-    // Sadece pencere boyutu değiştiğinde yeniden çiz
-    const handleResize = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      renderer.setSize(w, h);
-      material.uniforms.uResolution.value.set(w * DPR, h * DPR);
-      renderer.render(scene, camera);
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      renderer.dispose();
-      material.dispose();
-      if (renderer.domElement && renderer.domElement.parentNode) {
-        renderer.domElement.parentNode.removeChild(renderer.domElement);
-      }
-    };
-  }, []);
-
-  return <div ref={mountRef} className="crt-filter-overlay" />;
+      {/* Tüplü Televizyon Cam Çerçevesi (Köşe kavisi ve derin cam gölgesi) */}
+      <div className="crt-tube-bezel" />
+    </div>
+  );
 }

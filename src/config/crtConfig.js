@@ -1,13 +1,10 @@
 /**
  * CRT Ekran Boğumu Konfigürasyonu
- * Değerleri buradan doğrudan değiştirebilirsin.
+ * Ekrandaki tüm elemanların (Header, Lanyard, metinler vb.) tüp bombesi miktarını buradan ayarlayabilirsin.
  */
 export const crtConfig = {
-  // EKRAN BOĞUMU (Tüplü TV Cam Bombesi / Fıçı Kavis Ayarı)
-  curvature: 0.15,          // Boğum miktarı (0.0 = tamamen düz, 0.12 = klasik tüplü TV, 0.25 = aşırı boğum)
-  vignette: 0.38,           // Ekran köşelerindeki tüp kararması (0.1 - 0.6)
-  scanlineIntensity: 0.05,  // İnce kavisli CRT çizgisi (0.0 = kapalı, 0.05 = hafif tüplü TV)
-  glow: 0.10,               // Tüplü ekran fosfor kenar ışıması
+  // Tüp Bombesi & Kavis Miktarı (0 = Düz, 35 = Hafif tüplü kavis, 55 = Klasik CRT TV bombesi, 80 = Derin kavis)
+  curvature: 55,
 };
 
 export default crtConfig;
