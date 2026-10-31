@@ -9,9 +9,9 @@ import './CRTTerminal.css';
 /**
  * WebGL CRT Terminal Shader
  * 
- * Ekrandaki TÜM içeriği (Header, SWITCH logosu, Discord avatarı, Spotify sayacı,
- * CultStream matrix akışı ve PathDrops labirentini) tek bir doku olarak alır ve
- * referans fotoğraftaki gibi gerçek 3D fıçı bombesiyle (barrel curvature) büker.
+ * - Dış çerçeve/kasa kaldırıldı; doğrudan tüm ekranı (100vw x 100vh) kaplar.
+ * - Aşırı abartılı büküm dengelendi; doğal, şık ve göz yormayan bir tüp bombesi uygular.
+ * - Fosfor ızgarası ve köşe kararması ince ayarlandı.
  */
 
 const vertexShader = `
@@ -33,54 +33,55 @@ const fragmentShader = `
   varying vec2 vUv;
 
   vec2 curve(vec2 uv) {
-    vec2 centered = uv - 0.5;
+    vec2 st = uv - 0.5;
+    // En-boy oranına göre dengeli kavis (aşırı yatay esnemeyi engeller)
     float aspect = uResolution.x / uResolution.y;
-    centered.x *= aspect;
-    float r2 = dot(centered, centered);
-    centered *= 1.0 + r2 * uCurvature;
-    centered.x /= aspect;
-    return centered + 0.5;
+    st.x *= (aspect * 0.7);
+    float r2 = dot(st, st);
+    st *= 1.0 + r2 * uCurvature;
+    st.x /= (aspect * 0.7);
+    return st + 0.5;
   }
 
   void main() {
     vec2 curvedUv = curve(vUv);
 
-    // Kavis sınırlarının dışı: Monitör kasasının içi derin siyah
+    // Kavis sınırlarının dışı: Ekranın en kenarları yumuşakça kararır
     if (curvedUv.x < 0.0 || curvedUv.x > 1.0 || curvedUv.y < 0.0 || curvedUv.y > 1.0) {
-      gl_FragColor = vec4(0.012, 0.003, 0.003, 1.0);
+      gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
       return;
     }
 
-    // Bükülmüş koordinattan sahne pikselini oku
+    // Sahneden bükülmüş pikseli oku
     vec4 scene = texture2D(uScene, curvedUv);
 
-    // Kırmızı monokrom fosfor tonlaması (Referans fotoğraftaki o canlı kırmızı tonlar)
+    // Kırmızı monokrom fosfor eşlemesi (Referans görseldeki o kırmızı/turuncu tonlar)
     float luma = dot(scene.rgb, vec3(0.299, 0.587, 0.114));
     vec3 phosphor = mix(
-      vec3(0.04, 0.006, 0.006), // Derin katot camı tabanı
-      vec3(1.0, 0.22, 0.15),   // Parlayan kırmızı fosfor
+      vec3(0.03, 0.005, 0.005), // Derin katot camı tabanı
+      vec3(1.0, 0.24, 0.16),    // Parlayan kırmızı fosfor
       luma
     );
 
-    // Orijinal renk nüanslarını harmanla (yeşil/sarı durum simgesi için)
-    vec3 color = mix(phosphor, scene.rgb * 1.25, 0.25);
+    // Orijinal renk nüanslarını koru (yeşil/sarı durum simgesi için)
+    vec3 color = mix(phosphor, scene.rgb * 1.25, 0.28);
 
-    // Mikroskobik Fosfor Izgarası (Fotoğraftaki 3x3px geometrik dot-matrix ağı)
+    // İnce Fosfor Izgarası (Göz yormayan, net 2.5px hücre ağı)
     if (uPhosphorGrid > 0.01) {
       vec2 pix = curvedUv * uResolution;
-      vec2 grid = fract(pix / 3.0);
-      float mask = (grid.x < 0.35 || grid.y < 0.35) ? (1.0 - uPhosphorGrid) : 1.0;
+      vec2 grid = fract(pix / 2.5);
+      float mask = (grid.x < 0.28 || grid.y < 0.28) ? (1.0 - uPhosphorGrid) : 1.0;
       color *= mask;
     }
 
-    // Dışbükey Tüp Küresel Gölgelendirmesi (Vignette)
+    // Doğal Dışbükey Tüp Vignette (Köşelerin hafifçe derinleşmesi)
     vec2 vCent = (curvedUv - 0.5) * 2.0;
     float vig = 1.0 - dot(vCent, vCent) * uVignette;
-    color *= clamp(vig, 0.0, 1.0);
+    color *= clamp(vig, 0.25, 1.0);
 
-    // Cam Kenar Işıması (Glass Rim Glow)
+    // Çok hafif cam kenar ışıltısı
     float edgeDist = min(min(curvedUv.x, 1.0 - curvedUv.x), min(curvedUv.y, 1.0 - curvedUv.y));
-    float rim = smoothstep(0.04, 0.0, edgeDist) * 0.15;
+    float rim = smoothstep(0.03, 0.0, edgeDist) * 0.12;
     color += vec3(rim * 0.8, rim * 0.1, rim * 0.1);
 
     gl_FragColor = vec4(color, 1.0);
@@ -97,7 +98,6 @@ export default function CRTTerminal() {
     spotify: null
   });
 
-  // Profil verisi referansı (animasyon döngüsünde anlık erişim için)
   const profilRef = useRef(profil);
   profilRef.current = profil;
 
@@ -121,11 +121,11 @@ export default function CRTTerminal() {
     const container = mountRef.current;
     if (!container) return;
 
-    let width = container.clientWidth || window.innerWidth;
-    let height = container.clientHeight || window.innerHeight;
+    let width = window.innerWidth;
+    let height = window.innerHeight;
     const DPR = Math.min(window.devicePixelRatio || 1, 2);
 
-    // 1. Sahne Tuvali (Tüm arayüz buraya 2D olarak çizilir)
+    // 1. Sahne Tuvali
     const sceneCanvas = document.createElement('canvas');
     sceneCanvas.width = width * DPR;
     sceneCanvas.height = height * DPR;
@@ -153,7 +153,7 @@ export default function CRTTerminal() {
     avatarImg.crossOrigin = 'anonymous';
     avatarImg.src = profilRef.current.avatarUrl;
 
-    // 4. Three.js Sahnesi ve WebGL Renderer
+    // 4. Three.js Sahnesi ve WebGL Renderer (Tam Ekran)
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
@@ -181,11 +181,10 @@ export default function CRTTerminal() {
     const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
     scene.add(quad);
 
-    // Yeniden Boyutlandırma
+    // Pencere Boyutlandırma
     const handleResize = () => {
-      if (!container) return;
-      width = container.clientWidth || window.innerWidth;
-      height = container.clientHeight || window.innerHeight;
+      width = window.innerWidth;
+      height = window.innerHeight;
 
       renderer.setSize(width, height);
       material.uniforms.uResolution.value.set(width * DPR, height * DPR);
@@ -314,7 +313,7 @@ export default function CRTTerminal() {
       // C. BODY ALANI: PathDrops Labirenti
       sceneCtx.drawImage(mazeCanvas, 0, 90, width, Math.max(10, height - 90));
 
-      // --- THREE.JS WEBGL RENDER (BÜKÜM & CRT SHADER) ---
+      // --- THREE.JS WEBGL RENDER ---
       canvasTexture.needsUpdate = true;
       material.uniforms.uCurvature.value = crtConfig.curvature;
       material.uniforms.uPhosphorGrid.value = crtConfig.phosphorGrid;
@@ -340,10 +339,8 @@ export default function CRTTerminal() {
   }, []);
 
   return (
-    <div className={`crt-terminal-wrapper ${crtConfig.monitorFrame ? 'has-casing' : 'full-screen'}`}>
-      <div className="crt-monitor-bezel" ref={mountRef}>
-        {/* WebGL Canvas buraya dinamik eklenir */}
-      </div>
+    <div className="crt-terminal-wrapper">
+      <div className="crt-monitor-bezel" ref={mountRef} />
     </div>
   );
 }

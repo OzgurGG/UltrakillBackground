@@ -1,19 +1,16 @@
 /**
  * CRT Monitör / Ekran Konfigürasyonu
- * Referans görseldeki kırmızı fosforlu bombeli terminal monitörü ayarları.
+ * Doğal, temiz ve ekrana tam oturan CRT ayarları.
  */
 export const crtConfig = {
-  // Tüp Bombesi & Kavis Miktarı (0.0 = Düz, 0.15 = Doğal CRT kavis, 0.22 = Fotoğraftaki belirgin tüp bombesi)
-  curvature: 0.20,
+  // Tüp Bombesi & Kavis (0.0 = Düz, 0.08 = Doğal & zarif tüp bombesi, 0.14 = Daha belirgin bombe)
+  curvature: 0.08,
 
-  // Monitör Kasası Çerçevesi (true = Gerçek tüplü monitör kasası içinde, false = Tam ekran tüp camı)
-  monitorFrame: true,
+  // Fosfor Izgarası Yoğunluğu (0.0 = Kapalı, 0.22 = Net ve göz yormayan piksel ağı)
+  phosphorGrid: 0.22,
 
-  // Fosfor Hücre Izgarası (Aperture Grille / Dot-Matrix) Yoğunluğu (0.0 = Kapalı, 0.40 = İdeal net ızgara)
-  phosphorGrid: 0.40,
-
-  // Tüp Köşe Kararması (Vignette derinliği)
-  vignette: 0.40,
+  // Köşe Kararması (Vignette) (0.0 = Kapalı, 0.28 = Doğal köşe cam gölgesi)
+  vignette: 0.28,
 };
 
 export default crtConfig;

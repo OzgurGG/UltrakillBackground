@@ -1,53 +1,37 @@
-/* CRTTerminal - Fotoğraftaki Kırmızı Monokrom WebGL CRT Monitörü */
+/* CRTTerminal - Tam Ekran Bükümlü CRT Monitörü (Dış Çerçevesiz, Tam Ekran) */
 
 .crt-terminal-wrapper {
   width: 100vw;
   height: 100vh;
-  background-color: #030303;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin: 0;
+  padding: 0;
+  background-color: #000000;
   overflow: hidden;
+  position: relative;
   box-sizing: border-box;
-}
-
-.crt-terminal-wrapper.has-casing {
-  padding: 16px 24px;
 }
 
 .crt-monitor-bezel {
-  position: relative;
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  background: #080202;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background-color: #000000;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-sizing: border-box;
-}
-
-.crt-terminal-wrapper.has-casing .crt-monitor-bezel {
-  border-radius: 44px;
-  border: 18px solid #141418;
-  box-shadow:
-    inset 0 0 25px rgba(0, 0, 0, 0.95),
-    0 25px 60px rgba(0, 0, 0, 0.95),
-    0 0 0 4px #070709;
 }
 
 .crt-webgl-canvas {
   display: block;
   width: 100% !important;
   height: 100% !important;
-}
-
-@media (max-width: 768px) {
-  .crt-terminal-wrapper.has-casing {
-    padding: 0;
-  }
-  .crt-terminal-wrapper.has-casing .crt-monitor-bezel {
-    border-radius: 0;
-    border: none;
-  }
+  position: absolute;
+  inset: 0;
 }
