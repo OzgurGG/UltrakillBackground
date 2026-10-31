@@ -1,0 +1,21 @@
+.body-container {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  min-height: calc(100vh - 110px);
+  background-color: #050202;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.body-content {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px 20px;
+  box-sizing: border-box;
+}

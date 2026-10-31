@@ -1,0 +1,27 @@
+{
+  "project": "SWITCH Header Backgrounds",
+  "theme": "ULTRAKILL / DOOM / KEYGEN CHURCH",
+  "vibe": "Aggressive, heavy, dominant, occult, retro terminal, dark synth",
+  "palette": {
+    "background": "#000000",
+    "glow": "#ff0000",
+    "mid": "#880000",
+    "dark": "#220000",
+    "abyss": "#0a0000"
+  },
+  "rules": [
+    "Everything is text/ASCII. No images, no gradients except for text shadow glows.",
+    "Lighting is FAKE and driven by character density. '█' is blindingly bright, '.' is barely visible in the dark abyss.",
+    "Movement is rhythmic, heavy, breathing. It carries weight. It sways in harmony rather than chaotic flickering.",
+    "The Grid is Absolute. To solve mismatched character sizes, every character sits perfectly centered in a fixed terminal cell. This creates mechanical order out of demonic chaos.",
+    "Symmetry is divine. Symmetrical structures imply cults, altars, and artificial intelligence."
+  ],
+  "motifs": [
+    "CODE IS LAW",
+    "BLOOD IS FUEL",
+    "ALTAR",
+    "CATHEDRAL",
+    "BELIEVE",
+    "SACRIFICE"
+  ]
+}
