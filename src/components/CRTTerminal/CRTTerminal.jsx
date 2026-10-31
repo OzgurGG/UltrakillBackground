@@ -14,8 +14,8 @@ import './CRTTerminal.css';
  * - Header yüksekliği 115px'e büyütüldü; Lanyard alanı sağa ve aşağıya doğru ferahlatıldı.
  */
 
-const HEADER_HEIGHT = 115;
-const HEADER_LEFT_WIDTH = 320;
+const HEADER_HEIGHT = 140;
+const HEADER_LEFT_WIDTH = 360;
 
 const vertexShader = `
   varying vec2 vUv;
@@ -218,10 +218,10 @@ export default function CRTTerminal() {
       sceneCtx.fillStyle = 'rgba(7, 1, 1, 0.95)';
       sceneCtx.fillRect(0, 0, HEADER_LEFT_WIDTH, HEADER_HEIGHT);
 
-      // Lanyard kısmı biraz sağ ve aşağı alındı
-      const avatarCenterX = 56;
-      const avatarCenterY = 48;
-      const avatarRadius = 25;
+      // Lanyard kısmı ferahlatıldı ve büyütüldü
+      const avatarCenterX = 66;
+      const avatarCenterY = 56;
+      const avatarRadius = 30;
 
       // Discord Avatar
       sceneCtx.save();
@@ -252,19 +252,19 @@ export default function CRTTerminal() {
       else if (p.status === 'dnd') statusColor = '#f04747';
 
       sceneCtx.beginPath();
-      sceneCtx.arc(avatarCenterX + 18, avatarCenterY + 16, 7, 0, Math.PI * 2);
+      sceneCtx.arc(avatarCenterX + 22, avatarCenterY + 20, 8, 0, Math.PI * 2);
       sceneCtx.fillStyle = statusColor;
       sceneCtx.fill();
       sceneCtx.strokeStyle = '#070101';
       sceneCtx.lineWidth = 2;
       sceneCtx.stroke();
 
-      // Logo: SWITCH (Ferahlatıldı ve büyütüldü)
+      // Logo: SWITCH (Daha büyük ve net)
       sceneCtx.fillStyle = '#ff3b3b';
-      sceneCtx.font = 'bold 32px "Share Tech Mono", monospace';
-      sceneCtx.fillText('SWITCH', avatarCenterX + 38, avatarCenterY + 8);
+      sceneCtx.font = 'bold 38px "Share Tech Mono", monospace';
+      sceneCtx.fillText('SWITCH', avatarCenterX + 44, avatarCenterY + 12);
 
-      // Müzik / Spotify Bilgisi (Sağa ve aşağı kaydırıldı)
+      // Müzik / Spotify Bilgisi
       if (p.spotify) {
         const { artist, song, start, end } = p.spotify;
         let progressStr = "0:00";
@@ -279,17 +279,17 @@ export default function CRTTerminal() {
         }
 
         sceneCtx.fillStyle = '#ff9999';
-        sceneCtx.font = 'bold 12px "Share Tech Mono", monospace';
+        sceneCtx.font = 'bold 13px "Share Tech Mono", monospace';
         const musicLine = `${artist} - ${song}`;
-        sceneCtx.fillText(musicLine.length > 28 ? musicLine.slice(0, 26) + '..' : musicLine, 32, 98);
+        sceneCtx.fillText(musicLine.length > 30 ? musicLine.slice(0, 28) + '..' : musicLine, 36, 120);
 
         sceneCtx.fillStyle = '#aa3333';
-        sceneCtx.font = '11px "Share Tech Mono", monospace';
-        sceneCtx.fillText(`[${progressStr} / ${durationStr}]`, 215, 98);
+        sceneCtx.font = '12px "Share Tech Mono", monospace';
+        sceneCtx.fillText(`[${progressStr} / ${durationStr}]`, 245, 120);
       } else if (p.musicText) {
         sceneCtx.fillStyle = '#aa4444';
-        sceneCtx.font = '11px "Share Tech Mono", monospace';
-        sceneCtx.fillText(p.musicText, 32, 98);
+        sceneCtx.font = '12px "Share Tech Mono", monospace';
+        sceneCtx.fillText(p.musicText, 36, 120);
       }
 
       // Header Dikey Ayırıcı Çizgi
