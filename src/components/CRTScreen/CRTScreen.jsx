@@ -3,12 +3,10 @@ import './CRTScreen.css';
 import { crtConfig } from '../../config/crtConfig';
 
 /**
- * CRTScreen - Sayfanın Tamamını Tüplü Televizyona (CRT Tube) Dönüştüren Kapsayıcı
+ * CRTScreen - Yalnızca Küresel Tüp Bombesi (Barrel Curvature) Uygulayan Kapsayıcı
  * 
- * - DOM içeriğini (Header, metinler, animasyonlar) optik olarak tüp şeklinde büker (Barrel Distortion).
- * - İnce fosfor tarama çizgileri (scanlines) ve RGB alt piksel ızgarası (aperture grille) uygular.
- * - Katot tüpü köşe kararması (vignette), bombeli cam yansıması ve analog tarama bandı ekler.
- * - crtConfig üzerinden tüm ayarlar anlık olarak değiştirilebilir.
+ * Tarama çizgileri, gezinen şerit, RGB ağı ve parlamalar kaldırılmıştır.
+ * Yalnızca ekrandaki tüm öğelerin tüplü ekran gibi dışa doğru kavislenmesini sağlar.
  */
 export default function CRTScreen({ children }) {
   const [mapUrl, setMapUrl] = useState('');
@@ -35,7 +33,7 @@ export default function CRTScreen({ children }) {
         const nx = (x - half) / half; // -1 to 1
         const r2 = nx * nx + ny * ny;
 
-        // Fıçı/Tüp kavis formülü: köşelere doğru pikseller dışarı açılır
+        // Fıçı/Tüp bombesi formülü: dış kenarlara doğru bükülme
         const dispX = nx * r2;
         const dispY = ny * r2;
 
@@ -43,9 +41,9 @@ export default function CRTScreen({ children }) {
         const g = Math.max(0, Math.min(255, Math.round(128 - dispY * 127)));
 
         const idx = (y * size + x) * 4;
-        data[idx] = r;       // R kanalı: Yatay yer değiştirme
-        data[idx + 1] = g;   // G kanalı: Dikey yer değiştirme
-        data[idx + 2] = 128; // B kanalı: Boş
+        data[idx] = r;       // R kanalı: Yatay bükülme
+        data[idx + 1] = g;   // G kanalı: Dikey bükülme
+        data[idx + 2] = 128; // B kanalı
         data[idx + 3] = 255; // Alpha
       }
     }
@@ -54,35 +52,16 @@ export default function CRTScreen({ children }) {
     setMapUrl(canvas.toDataURL());
   }, []);
 
-  // Dinamik CSS Değişkenleri
-  const cssVariables = useMemo(() => {
-    return {
-      '--crt-scanlines': crtConfig.scanlines,
-      '--crt-rgb-mask': crtConfig.rgbMask,
-      '--crt-vignette': crtConfig.vignette,
-    };
-  }, []);
-
-  // İçeriğe uygulanacak optik filtreler (Bükme + Katot Fosfor Parlaması)
   const contentFilter = useMemo(() => {
-    const filters = [];
     if (crtConfig.curvature > 0 && mapUrl) {
-      filters.push('url(#crt-barrel-filter)');
+      return 'url(#crt-barrel-filter)';
     }
-    if (crtConfig.glow > 0) {
-      filters.push(`contrast(${1 + crtConfig.glow * 0.06})`);
-      filters.push(`brightness(${1 + crtConfig.glow * 0.08})`);
-      filters.push(`drop-shadow(0 0 ${Math.round(crtConfig.glow * 2)}px rgba(255, 120, 120, ${crtConfig.glow * 0.25}))`);
-    }
-    return filters.length > 0 ? filters.join(' ') : undefined;
+    return undefined;
   }, [mapUrl]);
 
   return (
-    <div
-      className={`crt-tv-container ${crtConfig.tvBezel ? 'has-bezel' : 'full-screen'}`}
-      style={cssVariables}
-    >
-      {/* SVG Küresel Optik Bükme Filtresi */}
+    <div className="crt-tv-container">
+      {/* SVG Küresel Bükme Filtresi */}
       {crtConfig.curvature > 0 && mapUrl && (
         <svg
           className="crt-svg-filter"
@@ -105,32 +84,10 @@ export default function CRTScreen({ children }) {
         </svg>
       )}
 
-      {/* TV Kasası */}
-      <div className="crt-chassis">
-        {/* Tüplü Cam Ekran */}
-        <div className="crt-screen">
-          {/* Ekrandaki Tüm Bileşenler (Header ve İçerik) */}
-          <div className="crt-content" style={{ filter: contentFilter }}>
-            {children}
-          </div>
-
-          {/* 1. RGB Alt Piksel Izgarası */}
-          {crtConfig.rgbMask > 0 && <div className="crt-layer crt-rgb-mask" />}
-
-          {/* 2. İnce Yatay Tarama Çizgileri */}
-          {crtConfig.scanlines > 0 && <div className="crt-layer crt-scanlines" />}
-
-          {/* 3. Dikey Tarama Bandı (Humbar) */}
-          {crtConfig.scanlineRoll && <div className="crt-layer crt-beam-roll" />}
-
-          {/* 4. Tüp Köşe Kararması */}
-          {crtConfig.vignette > 0 && <div className="crt-layer crt-vignette" />}
-
-          {/* 5. Bombeli Cam Yansıma Işığı */}
-          {crtConfig.glassReflection && <div className="crt-layer crt-glass-reflection" />}
-
-          {/* 6. 60Hz Mikro Titreşim */}
-          {crtConfig.flicker && <div className="crt-layer crt-flicker" />}
+      {/* Tüplü Ekran Alanı */}
+      <div className="crt-screen">
+        <div className="crt-content" style={{ filter: contentFilter }}>
+          {children}
         </div>
       </div>
     </div>

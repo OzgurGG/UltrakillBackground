@@ -1,9 +1,9 @@
-/* CRTScreen - Tüplü Televizyon (CRT Tube) Ekran Kapsayıcısı */
+/* CRTScreen - Yalnızca Tüp Bombesi ve Kavis */
 
 .crt-tv-container {
   width: 100vw;
   height: 100vh;
-  background-color: #050505;
+  background-color: #070709;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -12,164 +12,23 @@
   box-sizing: border-box;
 }
 
-/* TV Kasası / Bezel Modu (crtConfig.tvBezel: true ise) */
-.crt-tv-container.has-bezel {
-  padding: 24px;
-}
-
-.crt-chassis {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #0a0a0c;
-  overflow: hidden;
-}
-
-.crt-tv-container.has-bezel .crt-chassis {
-  border-radius: 40px;
-  border: 14px solid #16161a;
-  box-shadow:
-    inset 0 0 20px rgba(0, 0, 0, 0.9),
-    0 12px 35px rgba(0, 0, 0, 0.9),
-    0 0 0 2px #0a0a0d;
-}
-
-/* Tüplü Cam Ekran (Cathode Ray Tube) */
+/* Tüplü Cam Ekran Sınırları */
 .crt-screen {
   width: 100%;
   height: 100%;
   position: relative;
   overflow: hidden;
-  background-color: #070709;
-  border-radius: 36px / 26px;
-  /* Bombeli kalın cam derinliği ve tüp sınır gölgesi */
-  box-shadow:
-    inset 0 0 100px rgba(0, 0, 0, 0.9),
-    inset 0 0 35px rgba(0, 0, 0, 0.95),
-    inset 0 2px 4px rgba(255, 255, 255, 0.12),
-    0 0 0 4px #0e0e12;
-}
-
-/* Tam ekran modunda hafif köşe yumuşatması */
-.crt-tv-container.full-screen .crt-screen {
   border-radius: 28px / 20px;
 }
 
-/* Sayfa İçeriği (Header, Body, vb. - CRT'den etkilenen katman) */
+/* Sayfa İçeriği (Header ve Elemanlar) */
 .crt-content {
   width: 100%;
   height: 100%;
   position: relative;
-  z-index: 1;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
-  /* Arka plan ışığının tüp fosforlarına yayılması */
   transform-origin: center center;
-}
-
-/* Tüm CRT Optik Katmanları için Ortak Temel */
-.crt-layer {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-/* 1. RGB Fosfor Izgarası (Shadow Mask / Trinitron Aperture Grille) */
-.crt-rgb-mask {
-  z-index: 10;
-  background: repeating-linear-gradient(
-    to right,
-    rgba(255, 0, 0, var(--crt-rgb-mask, 0.06)) 0px,
-    rgba(255, 0, 0, var(--crt-rgb-mask, 0.06)) 1px,
-    rgba(0, 255, 0, var(--crt-rgb-mask, 0.06)) 1px,
-    rgba(0, 255, 0, var(--crt-rgb-mask, 0.06)) 2px,
-    rgba(0, 0, 255, var(--crt-rgb-mask, 0.06)) 2px,
-    rgba(0, 0, 255, var(--crt-rgb-mask, 0.06)) 3px
-  );
-  background-size: 3px 100%;
-}
-
-/* 2. İnce CRT Tarama Çizgileri (Scanlines) */
-.crt-scanlines {
-  z-index: 11;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0) 0px,
-    rgba(0, 0, 0, 0) 1px,
-    rgba(0, 0, 0, var(--crt-scanlines, 0.38)) 2px,
-    rgba(0, 0, 0, var(--crt-scanlines, 0.38)) 3px
-  );
-  background-size: 100% 3px;
-}
-
-/* 3. Katot Işını Dikey Tarama Şeridi (Humbar / Rolling Beam) */
-.crt-beam-roll {
-  z-index: 12;
-  height: 25%;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.02) 45%,
-    rgba(0, 0, 0, 0.15) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  animation: beamSweep 7s linear infinite;
-}
-
-@keyframes beamSweep {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(500%); }
-}
-
-/* 4. Tüp Köşe Kararması (Radial Edge Vignette) */
-.crt-vignette {
-  z-index: 13;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 55%,
-    rgba(0, 0, 0, 0.45) 80%,
-    rgba(0, 0, 0, var(--crt-vignette, 0.85)) 100%
-  );
-}
-
-/* 5. Bombeli Cam Yüzey Işıltısı (Glass Specular Glare) */
-.crt-glass-reflection {
-  z-index: 14;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.08) 0%,
-    rgba(255, 255, 255, 0.02) 22%,
-    transparent 45%
-  );
-}
-
-/* 6. 60Hz Mikro Katot Titreşimi (Flicker) */
-.crt-flicker {
-  z-index: 15;
-  background: rgba(18, 16, 16, 0.015);
-  animation: crtMicroFlicker 0.15s infinite;
-}
-
-@keyframes crtMicroFlicker {
-  0% { opacity: 0.98; }
-  50% { opacity: 1; }
-  100% { opacity: 0.97; }
-}
-
-/* Mobil cihazlarda kenar boşluklarını sıfırla */
-@media (max-width: 768px) {
-  .crt-tv-container.has-bezel {
-    padding: 0;
-  }
-  .crt-tv-container.has-bezel .crt-chassis {
-    border-radius: 0;
-    border: none;
-  }
 }
