@@ -51,16 +51,8 @@ const fragmentShader = `
     // Sahneden bükülmüş pikseli oku
     vec4 scene = texture2D(uScene, curvedUv);
 
-    // Kırmızı monokrom fosfor renk eşlemesi
-    float luma = dot(scene.rgb, vec3(0.299, 0.587, 0.114));
-    vec3 phosphor = mix(
-      vec3(0.03, 0.005, 0.005), // Derin katot camı tabanı
-      vec3(1.0, 0.24, 0.16),    // Parlayan kırmızı fosfor
-      luma
-    );
-
-    // Orijinal renk tonlarını koru (durum simgesi yeşil/sarı parıltısı)
-    vec3 color = mix(phosphor, scene.rgb * 1.25, 0.25);
+    // Saf renkler ve saf siyah zemin (kırmızı tonlama wash filtresi kaldırıldı)
+    vec3 color = scene.rgb;
 
     // İnce mikro fosfor ağı (2.5px)
     if (uPhosphorGrid > 0.01) {
@@ -72,10 +64,8 @@ const fragmentShader = `
 
     // Yumuşak köşe derinliği (vignette)
     vec2 vCent = (curvedUv - 0.5) * 2.0;
-    float vig = 1.0 - dot(vCent, vCent) * (uVignette * 0.5);
-    color *= clamp(vig, 0.45, 1.0);
-
-    // Kenar kırmızı ışıklandırması kapatıldı
+    float vig = 1.0 - dot(vCent, vCent) * (uVignette * 0.4);
+    color *= clamp(vig, 0.55, 1.0);
 
     gl_FragColor = vec4(color, 1.0);
   }
@@ -208,14 +198,14 @@ export default function CRTTerminal() {
       }
 
       // --- 2D KOMPOZİT ÇİZİMİ ---
-      sceneCtx.fillStyle = '#070101';
+      sceneCtx.fillStyle = '#000000';
       sceneCtx.fillRect(0, 0, width, height);
 
       // A. HEADER SAĞ: CultStream Matrix
       sceneCtx.drawImage(matrixCanvas, HEADER_LEFT_WIDTH, 0, Math.max(10, width - HEADER_LEFT_WIDTH), HEADER_HEIGHT);
 
       // B. HEADER SOL PANEL (LANYARD & LOGO)
-      sceneCtx.fillStyle = 'rgba(7, 1, 1, 0.95)';
+      sceneCtx.fillStyle = 'rgba(0, 0, 0, 0.95)';
       sceneCtx.fillRect(0, 0, HEADER_LEFT_WIDTH, HEADER_HEIGHT);
 
       // Lanyard kısmı ferahlatıldı ve büyütüldü
@@ -232,7 +222,7 @@ export default function CRTTerminal() {
         if (avatarImg.complete && avatarImg.naturalWidth > 0) {
           sceneCtx.drawImage(avatarImg, avatarCenterX - avatarRadius, avatarCenterY - avatarRadius, avatarRadius * 2, avatarRadius * 2);
         } else {
-          sceneCtx.fillStyle = '#1e0505';
+          sceneCtx.fillStyle = '#0a0a0a';
           sceneCtx.fillRect(avatarCenterX - avatarRadius, avatarCenterY - avatarRadius, avatarRadius * 2, avatarRadius * 2);
         }
       } catch (e) {}
@@ -255,7 +245,7 @@ export default function CRTTerminal() {
       sceneCtx.arc(avatarCenterX + 22, avatarCenterY + 20, 8, 0, Math.PI * 2);
       sceneCtx.fillStyle = statusColor;
       sceneCtx.fill();
-      sceneCtx.strokeStyle = '#070101';
+      sceneCtx.strokeStyle = '#000000';
       sceneCtx.lineWidth = 2;
       sceneCtx.stroke();
 
@@ -310,6 +300,63 @@ export default function CRTTerminal() {
 
       // C. BODY ALANI: PathDrops Labirenti (Tüm ekrana yayılır)
       sceneCtx.drawImage(mazeCanvas, 0, HEADER_HEIGHT, width, Math.max(10, height - HEADER_HEIGHT));
+
+      // D. KÖŞEYE KARE PANEL (CYBERPUNK RETICLE CARD)
+      const cardSize = Math.min(300, Math.min(width - 48, height - HEADER_HEIGHT - 48));
+      if (cardSize > 120) {
+        const cardX = width - cardSize - 32;
+        const cardY = height - cardSize - 32;
+
+        // Panel Zemin (Yarı saydam saf siyah cam)
+        sceneCtx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+        sceneCtx.fillRect(cardX, cardY, cardSize, cardSize);
+
+        // Panel İnce Çerçeve
+        sceneCtx.strokeStyle = 'rgba(255, 34, 34, 0.22)';
+        sceneCtx.lineWidth = 1;
+        sceneCtx.strokeRect(cardX, cardY, cardSize, cardSize);
+
+        // 4 Köşe Keskin Kırmızı L-Braketleri (┌ ┐ └ ┘)
+        const bLen = 26; // Braket kol uzunluğu
+        const bThick = 3; // Braket et kalınlığı
+        sceneCtx.strokeStyle = '#ff2222';
+        sceneCtx.lineWidth = bThick;
+        sceneCtx.lineCap = 'square';
+        sceneCtx.shadowColor = 'rgba(255, 34, 34, 0.85)';
+        sceneCtx.shadowBlur = 8;
+
+        // Sol Üst (┌)
+        sceneCtx.beginPath();
+        sceneCtx.moveTo(cardX, cardY + bLen);
+        sceneCtx.lineTo(cardX, cardY);
+        sceneCtx.lineTo(cardX + bLen, cardY);
+        sceneCtx.stroke();
+
+        // Sağ Üst (┐)
+        sceneCtx.beginPath();
+        sceneCtx.moveTo(cardX + cardSize - bLen, cardY);
+        sceneCtx.lineTo(cardX + cardSize, cardY);
+        sceneCtx.lineTo(cardX + cardSize, cardY + bLen);
+        sceneCtx.stroke();
+
+        // Sol Alt (└)
+        sceneCtx.beginPath();
+        sceneCtx.moveTo(cardX, cardY + cardSize - bLen);
+        sceneCtx.lineTo(cardX, cardY + cardSize);
+        sceneCtx.lineTo(cardX + bLen, cardY + cardSize);
+        sceneCtx.stroke();
+
+        // Sağ Alt (┘)
+        sceneCtx.beginPath();
+        sceneCtx.moveTo(cardX + cardSize - bLen, cardY + cardSize);
+        sceneCtx.lineTo(cardX + cardSize, cardY + cardSize);
+        sceneCtx.lineTo(cardX + cardSize, cardY + cardSize - bLen);
+        sceneCtx.stroke();
+
+        // Shadow sıfırla
+        sceneCtx.shadowBlur = 0;
+        sceneCtx.shadowColor = 'transparent';
+      }
 
       // --- THREE.JS WEBGL RENDER ---
       canvasTexture.needsUpdate = true;
