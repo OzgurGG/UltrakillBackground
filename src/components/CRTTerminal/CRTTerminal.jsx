@@ -9,10 +9,13 @@ import './CRTTerminal.css';
 /**
  * WebGL CRT Terminal Shader
  * 
- * - Dış çerçeve/kasa kaldırıldı; doğrudan tüm ekranı (100vw x 100vh) kaplar.
- * - Aşırı abartılı büküm dengelendi; doğal, şık ve göz yormayan bir tüp bombesi uygular.
- * - Fosfor ızgarası ve köşe kararması ince ayarlandı.
+ * - Ekrana tam oturan (zoom kompanzasyonlu) küresel kavis; kenarlarda siyah boşluk bırakmaz.
+ * - Kenarlardaki kırmızı ışıklandırma / rim efekti tamamen kapatıldı.
+ * - Header yüksekliği 115px'e büyütüldü; Lanyard alanı sağa ve aşağıya doğru ferahlatıldı.
  */
+
+const HEADER_HEIGHT = 115;
+const HEADER_LEFT_WIDTH = 320;
 
 const vertexShader = `
   varying vec2 vUv;
@@ -32,30 +35,23 @@ const fragmentShader = `
 
   varying vec2 vUv;
 
+  // Ekrana tam oturan küresel fıçı eğriliği (kenar siyahlıklarını önler)
   vec2 curve(vec2 uv) {
     vec2 st = uv - 0.5;
-    // En-boy oranına göre dengeli kavis (aşırı yatay esnemeyi engeller)
-    float aspect = uResolution.x / uResolution.y;
-    st.x *= (aspect * 0.7);
     float r2 = dot(st, st);
-    st *= 1.0 + r2 * uCurvature;
-    st.x /= (aspect * 0.7);
-    return st + 0.5;
+    // Zoom kompanzasyonu: Kavisin kenarlarda siyah boşluk bırakmasını engeller
+    float zoom = 1.0 + 0.42 * uCurvature;
+    st *= (1.0 + r2 * uCurvature) / zoom;
+    return clamp(st + 0.5, 0.0, 1.0);
   }
 
   void main() {
     vec2 curvedUv = curve(vUv);
 
-    // Kavis sınırlarının dışı: Ekranın en kenarları yumuşakça kararır
-    if (curvedUv.x < 0.0 || curvedUv.x > 1.0 || curvedUv.y < 0.0 || curvedUv.y > 1.0) {
-      gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-      return;
-    }
-
     // Sahneden bükülmüş pikseli oku
     vec4 scene = texture2D(uScene, curvedUv);
 
-    // Kırmızı monokrom fosfor eşlemesi (Referans görseldeki o kırmızı/turuncu tonlar)
+    // Kırmızı monokrom fosfor renk eşlemesi
     float luma = dot(scene.rgb, vec3(0.299, 0.587, 0.114));
     vec3 phosphor = mix(
       vec3(0.03, 0.005, 0.005), // Derin katot camı tabanı
@@ -63,10 +59,10 @@ const fragmentShader = `
       luma
     );
 
-    // Orijinal renk nüanslarını koru (yeşil/sarı durum simgesi için)
-    vec3 color = mix(phosphor, scene.rgb * 1.25, 0.28);
+    // Orijinal renk tonlarını koru (durum simgesi yeşil/sarı parıltısı)
+    vec3 color = mix(phosphor, scene.rgb * 1.25, 0.25);
 
-    // İnce Fosfor Izgarası (Göz yormayan, net 2.5px hücre ağı)
+    // İnce mikro fosfor ağı (2.5px)
     if (uPhosphorGrid > 0.01) {
       vec2 pix = curvedUv * uResolution;
       vec2 grid = fract(pix / 2.5);
@@ -74,15 +70,12 @@ const fragmentShader = `
       color *= mask;
     }
 
-    // Doğal Dışbükey Tüp Vignette (Köşelerin hafifçe derinleşmesi)
+    // Yumuşak köşe derinliği (vignette)
     vec2 vCent = (curvedUv - 0.5) * 2.0;
-    float vig = 1.0 - dot(vCent, vCent) * uVignette;
-    color *= clamp(vig, 0.25, 1.0);
+    float vig = 1.0 - dot(vCent, vCent) * (uVignette * 0.5);
+    color *= clamp(vig, 0.45, 1.0);
 
-    // Çok hafif cam kenar ışıltısı
-    float edgeDist = min(min(curvedUv.x, 1.0 - curvedUv.x), min(curvedUv.y, 1.0 - curvedUv.y));
-    float rim = smoothstep(0.03, 0.0, edgeDist) * 0.12;
-    color += vec3(rim * 0.8, rim * 0.1, rim * 0.1);
+    // Kenar kırmızı ışıklandırması kapatıldı
 
     gl_FragColor = vec4(color, 1.0);
   }
@@ -135,17 +128,17 @@ export default function CRTTerminal() {
     // 2. Alt Modül Tuvali: Labirent (PathDrops)
     const mazeCanvas = document.createElement('canvas');
     mazeCanvas.width = width * DPR;
-    mazeCanvas.height = Math.max(10, height - 90) * DPR;
+    mazeCanvas.height = Math.max(10, height - HEADER_HEIGHT) * DPR;
     mazeCanvas.style.width = width + 'px';
-    mazeCanvas.style.height = Math.max(10, height - 90) + 'px';
+    mazeCanvas.style.height = Math.max(10, height - HEADER_HEIGHT) + 'px';
     const destroyMaze = initPathDrops(mazeCanvas);
 
     // 3. Alt Modül Tuvali: Header Matrix Akışı (CultStream)
     const matrixCanvas = document.createElement('canvas');
-    matrixCanvas.width = Math.max(10, width - 280) * DPR;
-    matrixCanvas.height = 90 * DPR;
-    matrixCanvas.style.width = Math.max(10, width - 280) + 'px';
-    matrixCanvas.style.height = '90px';
+    matrixCanvas.width = Math.max(10, width - HEADER_LEFT_WIDTH) * DPR;
+    matrixCanvas.height = HEADER_HEIGHT * DPR;
+    matrixCanvas.style.width = Math.max(10, width - HEADER_LEFT_WIDTH) + 'px';
+    matrixCanvas.style.height = HEADER_HEIGHT + 'px';
     const destroyMatrix = initCultStream(matrixCanvas, 'back');
 
     // Discord Avatar Resmi
@@ -153,7 +146,7 @@ export default function CRTTerminal() {
     avatarImg.crossOrigin = 'anonymous';
     avatarImg.src = profilRef.current.avatarUrl;
 
-    // 4. Three.js Sahnesi ve WebGL Renderer (Tam Ekran)
+    // 4. Three.js Sahnesi ve WebGL Renderer
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
@@ -194,14 +187,14 @@ export default function CRTTerminal() {
       sceneCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
 
       mazeCanvas.width = width * DPR;
-      mazeCanvas.height = Math.max(10, height - 90) * DPR;
+      mazeCanvas.height = Math.max(10, height - HEADER_HEIGHT) * DPR;
       mazeCanvas.style.width = width + 'px';
-      mazeCanvas.style.height = Math.max(10, height - 90) + 'px';
+      mazeCanvas.style.height = Math.max(10, height - HEADER_HEIGHT) + 'px';
 
-      matrixCanvas.width = Math.max(10, width - 280) * DPR;
-      matrixCanvas.height = 90 * DPR;
-      matrixCanvas.style.width = Math.max(10, width - 280) + 'px';
-      matrixCanvas.style.height = '90px';
+      matrixCanvas.width = Math.max(10, width - HEADER_LEFT_WIDTH) * DPR;
+      matrixCanvas.height = HEADER_HEIGHT * DPR;
+      matrixCanvas.style.width = Math.max(10, width - HEADER_LEFT_WIDTH) + 'px';
+      matrixCanvas.style.height = HEADER_HEIGHT + 'px';
     };
 
     window.addEventListener('resize', handleResize);
@@ -219,30 +212,35 @@ export default function CRTTerminal() {
       sceneCtx.fillRect(0, 0, width, height);
 
       // A. HEADER SAĞ: CultStream Matrix
-      sceneCtx.drawImage(matrixCanvas, 280, 0, Math.max(10, width - 280), 90);
+      sceneCtx.drawImage(matrixCanvas, HEADER_LEFT_WIDTH, 0, Math.max(10, width - HEADER_LEFT_WIDTH), HEADER_HEIGHT);
 
-      // B. HEADER SOL PANEL
-      sceneCtx.fillStyle = 'rgba(7, 1, 1, 0.9)';
-      sceneCtx.fillRect(0, 0, 280, 90);
+      // B. HEADER SOL PANEL (LANYARD & LOGO)
+      sceneCtx.fillStyle = 'rgba(7, 1, 1, 0.95)';
+      sceneCtx.fillRect(0, 0, HEADER_LEFT_WIDTH, HEADER_HEIGHT);
+
+      // Lanyard kısmı biraz sağ ve aşağı alındı
+      const avatarCenterX = 56;
+      const avatarCenterY = 48;
+      const avatarRadius = 25;
 
       // Discord Avatar
       sceneCtx.save();
       sceneCtx.beginPath();
-      sceneCtx.arc(48, 38, 22, 0, Math.PI * 2);
+      sceneCtx.arc(avatarCenterX, avatarCenterY, avatarRadius, 0, Math.PI * 2);
       sceneCtx.clip();
       try {
         if (avatarImg.complete && avatarImg.naturalWidth > 0) {
-          sceneCtx.drawImage(avatarImg, 26, 16, 44, 44);
+          sceneCtx.drawImage(avatarImg, avatarCenterX - avatarRadius, avatarCenterY - avatarRadius, avatarRadius * 2, avatarRadius * 2);
         } else {
-          sceneCtx.fillStyle = '#222';
-          sceneCtx.fillRect(26, 16, 44, 44);
+          sceneCtx.fillStyle = '#1e0505';
+          sceneCtx.fillRect(avatarCenterX - avatarRadius, avatarCenterY - avatarRadius, avatarRadius * 2, avatarRadius * 2);
         }
       } catch (e) {}
       sceneCtx.restore();
 
       // Avatar Border
       sceneCtx.beginPath();
-      sceneCtx.arc(48, 38, 22, 0, Math.PI * 2);
+      sceneCtx.arc(avatarCenterX, avatarCenterY, avatarRadius, 0, Math.PI * 2);
       sceneCtx.strokeStyle = '#8f1f1f';
       sceneCtx.lineWidth = 1.5;
       sceneCtx.stroke();
@@ -254,19 +252,19 @@ export default function CRTTerminal() {
       else if (p.status === 'dnd') statusColor = '#f04747';
 
       sceneCtx.beginPath();
-      sceneCtx.arc(66, 52, 6, 0, Math.PI * 2);
+      sceneCtx.arc(avatarCenterX + 18, avatarCenterY + 16, 7, 0, Math.PI * 2);
       sceneCtx.fillStyle = statusColor;
       sceneCtx.fill();
       sceneCtx.strokeStyle = '#070101';
       sceneCtx.lineWidth = 2;
       sceneCtx.stroke();
 
-      // Logo: SWITCH
+      // Logo: SWITCH (Ferahlatıldı ve büyütüldü)
       sceneCtx.fillStyle = '#ff3b3b';
-      sceneCtx.font = 'bold 30px "Share Tech Mono", monospace';
-      sceneCtx.fillText('SWITCH', 86, 47);
+      sceneCtx.font = 'bold 32px "Share Tech Mono", monospace';
+      sceneCtx.fillText('SWITCH', avatarCenterX + 38, avatarCenterY + 8);
 
-      // Müzik / Spotify Bilgisi
+      // Müzik / Spotify Bilgisi (Sağa ve aşağı kaydırıldı)
       if (p.spotify) {
         const { artist, song, start, end } = p.spotify;
         let progressStr = "0:00";
@@ -281,37 +279,37 @@ export default function CRTTerminal() {
         }
 
         sceneCtx.fillStyle = '#ff9999';
-        sceneCtx.font = '12px "Share Tech Mono", monospace';
+        sceneCtx.font = 'bold 12px "Share Tech Mono", monospace';
         const musicLine = `${artist} - ${song}`;
-        sceneCtx.fillText(musicLine.length > 28 ? musicLine.slice(0, 26) + '..' : musicLine, 24, 78);
+        sceneCtx.fillText(musicLine.length > 28 ? musicLine.slice(0, 26) + '..' : musicLine, 32, 98);
 
         sceneCtx.fillStyle = '#aa3333';
         sceneCtx.font = '11px "Share Tech Mono", monospace';
-        sceneCtx.fillText(`[${progressStr} / ${durationStr}]`, 200, 78);
+        sceneCtx.fillText(`[${progressStr} / ${durationStr}]`, 215, 98);
       } else if (p.musicText) {
         sceneCtx.fillStyle = '#aa4444';
         sceneCtx.font = '11px "Share Tech Mono", monospace';
-        sceneCtx.fillText(p.musicText, 24, 78);
+        sceneCtx.fillText(p.musicText, 32, 98);
       }
 
       // Header Dikey Ayırıcı Çizgi
-      sceneCtx.strokeStyle = '#551010';
+      sceneCtx.strokeStyle = '#441010';
       sceneCtx.lineWidth = 1;
       sceneCtx.beginPath();
-      sceneCtx.moveTo(280, 0);
-      sceneCtx.lineTo(280, 90);
+      sceneCtx.moveTo(HEADER_LEFT_WIDTH, 0);
+      sceneCtx.lineTo(HEADER_LEFT_WIDTH, HEADER_HEIGHT);
       sceneCtx.stroke();
 
       // Header Alt Yatay Çizgi
-      sceneCtx.strokeStyle = '#881818';
+      sceneCtx.strokeStyle = '#661414';
       sceneCtx.lineWidth = 2;
       sceneCtx.beginPath();
-      sceneCtx.moveTo(0, 90);
-      sceneCtx.lineTo(width, 90);
+      sceneCtx.moveTo(0, HEADER_HEIGHT);
+      sceneCtx.lineTo(width, HEADER_HEIGHT);
       sceneCtx.stroke();
 
-      // C. BODY ALANI: PathDrops Labirenti
-      sceneCtx.drawImage(mazeCanvas, 0, 90, width, Math.max(10, height - 90));
+      // C. BODY ALANI: PathDrops Labirenti (Tüm ekrana yayılır)
+      sceneCtx.drawImage(mazeCanvas, 0, HEADER_HEIGHT, width, Math.max(10, height - HEADER_HEIGHT));
 
       // --- THREE.JS WEBGL RENDER ---
       canvasTexture.needsUpdate = true;
