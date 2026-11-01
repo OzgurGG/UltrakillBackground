@@ -11,6 +11,9 @@ export const crtConfig = {
 
   // Köşe Kararması (Vignette) (0.0 = Kapalı, 0.28 = Doğal köşe cam gölgesi)
   vignette: 0.28,
+
+  // Fosfor Parlama & Halasyon (Bloom) (0.0 = Kapalı, 0.36 = Doğal optik fosfor halesi)
+  bloom: 0.36,
 };
 
 export default crtConfig;

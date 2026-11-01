@@ -64,11 +64,26 @@ const CONFIG = {
 
 const DROP_STATES = { ALIVE: 'alive', DYING: 'dying', DEAD: 'dead' };
 
+// Elektrik Cyan -> Aqua -> Okyanus Mavisi -> Fosfor İzi (Sıfır çöp tahsisi)
 const COLOR_TABLE = Array.from({ length: 6 }, (_, a) => {
-  const base = Math.round(175 - (a / 5) * 115);
   return Array.from({ length: 11 }, (_, i) => {
-    const alpha = Math.max(0.04, (i / 10) * 0.52).toFixed(2);
-    return `rgba(${base},${base},${base + 12},${alpha})`;
+    const normI = i / 10;
+    const alpha = Math.max(0.04, normI * (0.72 - a * 0.08)).toFixed(3);
+    let r, g, b;
+    if (a <= 1) {
+      r = Math.round(20 + normI * 40);
+      g = Math.round(195 + normI * 60);
+      b = 255;
+    } else if (a <= 3) {
+      r = Math.round(5 + normI * 15);
+      g = Math.round(135 + normI * 55);
+      b = Math.round(205 + normI * 50);
+    } else {
+      r = 0;
+      g = Math.round(70 + normI * 50);
+      b = Math.round(125 + normI * 55);
+    }
+    return `rgba(${r},${g},${b},${alpha})`;
   });
 });
 
@@ -77,25 +92,62 @@ function pathColor(intensity, age) {
   const iIdx = Math.max(0, Math.min(10, Math.floor(intensity * 10)));
   return COLOR_TABLE[aIdx][iIdx];
 }
-function headColor() { return 'rgba(215,215,228,0.85)'; }
-function glowColor() { return 'rgba(175,175,198,0.2)'; }
-function nodeStroke(a) { return `rgba(155,150,168,${a})`; }
-function nodeLabel(a) { return `rgba(195,190,208,${a})`; }
-function cardBg(a) { return `rgba(7,7,11,${a})`; }
-function cardBorder(a) { return `rgba(115,110,132,${a})`; }
-function cardText(a) { return `rgba(175,170,192,${a})`; }
 
-const headGlowSprite = (typeof document !== 'undefined') ? (() => {
+function createGlowSprite(size, innerColor, midColor, outerColor, addRing = false) {
+  if (typeof document === 'undefined') return null;
   const c = document.createElement('canvas');
-  c.width = 24; c.height = 24;
+  c.width = size;
+  c.height = size;
   const gCtx = c.getContext('2d');
-  const g = gCtx.createRadialGradient(12, 12, 0, 12, 12, 11);
-  g.addColorStop(0, 'rgba(175, 175, 198, 0.28)');
-  g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  const half = size / 2;
+  const g = gCtx.createRadialGradient(half, half, 0, half, half, half - 1);
+  g.addColorStop(0.0, innerColor);
+  g.addColorStop(0.28, midColor);
+  g.addColorStop(0.72, outerColor);
+  g.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
   gCtx.fillStyle = g;
-  gCtx.fillRect(0, 0, 24, 24);
+  gCtx.fillRect(0, 0, size, size);
+
+  if (addRing) {
+    gCtx.strokeStyle = midColor;
+    gCtx.lineWidth = 1;
+    gCtx.beginPath();
+    gCtx.arc(half, half, half * 0.52, 0, Math.PI * 2);
+    gCtx.stroke();
+  }
   return c;
-})() : null;
+}
+
+const headGlowSprite = createGlowSprite(
+  36,
+  'rgba(255, 255, 255, 0.95)',
+  'rgba(0, 230, 255, 0.58)',
+  'rgba(0, 140, 255, 0.16)'
+);
+
+const endpointBeaconSprite = createGlowSprite(
+  32,
+  'rgba(0, 240, 255, 0.90)',
+  'rgba(0, 205, 255, 0.45)',
+  'rgba(0, 115, 225, 0.12)',
+  true
+);
+
+const alertBeaconSprite = createGlowSprite(
+  32,
+  'rgba(255, 90, 80, 0.95)',
+  'rgba(255, 50, 45, 0.50)',
+  'rgba(200, 20, 20, 0.15)',
+  true
+);
+
+const checkpointBeaconSprite = createGlowSprite(
+  32,
+  'rgba(60, 255, 185, 0.95)',
+  'rgba(20, 230, 150, 0.50)',
+  'rgba(0, 170, 110, 0.15)',
+  true
+);
 
 export function initPathDrops(cvs) {
   if (!cvs) return () => {};
@@ -113,7 +165,7 @@ export function initPathDrops(cvs) {
       return {
         val: 0, boxText: null, intensity: 0, life: 0,
         blocked: false, isCard: false,
-        cardLabel: null, cardWCells: 0,
+        cardLabel: null, cardType: 'PATH', cardWCells: 0,
         cardOriginR: -1, cardOriginC: -1,
         age: 0, decayStage: 0, isHorizontal: true
       };
@@ -307,7 +359,7 @@ export function initPathDrops(cvs) {
       return validDirs[validDirs.length - 1];
     }
 
-    function placeCard(r, c, label) {
+    function placeCard(r, c, label, type = 'PATH') {
       const cardW = 4, cardH = 2;
       let cr = Math.max(1, Math.min(rows - cardH - 1, r));
       let cc = Math.max(1, Math.min(cols - cardW - 1, c));
@@ -317,16 +369,13 @@ export function initPathDrops(cvs) {
           if (cr2 >= 0 && cr2 < rows && cc2 >= 0 && cc2 < cols)
             if (inNode(cr2, cc2) || grid[cr2][cc2].isCard) {
               if (!grid[r][c].isCard) {
-                // fallback: small symbol only sometimes
-                if (Math.random() < 0.5) {
-                  const sym = ['·', '◦', '▪', '▫', '×', '○', '□', '△'];
-                  const cell = grid[r][c];
-                  cell.val = 0; cell.boxText = sym[Math.floor(Math.random() * sym.length)];
-                  cell.blocked = true; cell.isCard = true;
-                  cell.intensity = 1.0; cell.life = 5.0;
-                  cell.cardOriginR = r; cell.cardOriginC = c;
-                  markDirty(r, c);
-                }
+                // Mikro-terminal ucu
+                const cell = grid[r][c];
+                cell.val = 0; cell.boxText = '◈';
+                cell.blocked = true; cell.isCard = true;
+                cell.intensity = 1.0; cell.life = 5.0;
+                cell.cardOriginR = r; cell.cardOriginC = c;
+                markDirty(r, c);
               }
               return;
             }
@@ -340,6 +389,7 @@ export function initPathDrops(cvs) {
             cell.blocked = true; cell.isCard = true;
             cell.cardOriginR = cr; cell.cardOriginC = cc;
             cell.cardWCells = cardW;
+            cell.cardType = type;
             if (i >= 0 && i < cardH && j >= 0 && j < cardW) {
               cell.intensity = 1.0; cell.life = 7.0 + Math.random() * 2.0;
             } else { cell.intensity = 0.18; cell.life = 4.0; }
@@ -352,6 +402,7 @@ export function initPathDrops(cvs) {
       sv(cr, cc, 6); sv(cr, cc + 1, 10); sv(cr, cc + 2, 10); sv(cr, cc + 3, 12);
       sv(cr + 1, cc, 3); sv(cr + 1, cc + 1, 10); sv(cr + 1, cc + 2, 10); sv(cr + 1, cc + 3, 9);
       grid[cr][cc].cardLabel = label;
+      grid[cr][cc].cardType = type;
       grid[cr][cc].cardWCells = cardW;
       markDirty(cr, cc);
     }
@@ -368,9 +419,9 @@ export function initPathDrops(cvs) {
       const cwPx = n.w * CELL_W, chPx = n.h * CELL_H;
       const cx = cxPx + cwPx / 2, cy = cyPx + chPx / 2;
 
-      ctx.fillStyle = `rgba(6,6,9,${alpha * 0.88})`;
+      ctx.fillStyle = `rgba(2,10,18,${alpha * 0.92})`;
       ctx.fillRect(cxPx, cyPx, cwPx, chPx);
-      ctx.strokeStyle = nodeStroke((0.32 + total * 0.28) * alpha);
+      ctx.strokeStyle = `rgba(0, 210, 255, ${(0.32 + total * 0.32) * alpha})`;
       ctx.lineWidth = 1;
       ctx.strokeRect(cxPx, cyPx, cwPx, chPx);
 
@@ -381,7 +432,7 @@ export function initPathDrops(cvs) {
         { x: cxPx, y: cyPx + chPx, sx: 1, sy: -1 },
         { x: cxPx + cwPx, y: cyPx + chPx, sx: -1, sy: -1 },
       ];
-      ctx.strokeStyle = nodeStroke((0.48 + total * 0.38) * alpha);
+      ctx.strokeStyle = `rgba(0, 245, 255, ${(0.65 + total * 0.35) * alpha})`;
       ctx.lineWidth = 1;
       for (const { x, y, sx, sy } of corners) {
         const tx = x + sx * drift, ty = y + sy * drift;
@@ -390,21 +441,21 @@ export function initPathDrops(cvs) {
       }
 
       setFont('bold 10px "Share Tech Mono",monospace');
-      ctx.fillStyle = nodeLabel((0.42 + total * 0.32) * alpha);
+      ctx.fillStyle = `rgba(215, 245, 255, ${(0.75 + total * 0.25) * alpha})`;
       ctx.textAlign = 'center';
       ctx.fillText(n.label, cx, cy - 2);
 
       // Life bar
       const barW = (cwPx - 10) * lifeRatio;
-      ctx.fillStyle = `rgba(75,73,88,${0.32 * alpha})`;
+      ctx.fillStyle = `rgba(0, 40, 75, ${0.45 * alpha})`;
       ctx.fillRect(cxPx + 5, cyPx + chPx - 5, cwPx - 10, 2);
-      ctx.fillStyle = `rgba(145,140,162,${0.55 * alpha})`;
+      ctx.fillStyle = `rgba(0, 240, 255, ${0.85 * alpha})`;
       ctx.fillRect(cxPx + 5, cyPx + chPx - 5, barW, 2);
 
       if (n.hitInt > 0) {
         ctx.globalCompositeOperation = 'screen';
         const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, cwPx * 0.6);
-        grd.addColorStop(0, `rgba(155,150,175,${n.hitInt * 0.1})`);
+        grd.addColorStop(0, `rgba(0, 230, 255, ${n.hitInt * 0.22})`);
         grd.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = grd;
         ctx.fillRect(cx - cwPx, cy - chPx, cwPx * 2, chPx * 2);
@@ -525,7 +576,7 @@ export function initPathDrops(cvs) {
 
           if (Math.random() < CONFIG.card.stopChance) {
             drop.state = DROP_STATES.DYING; drop.dyingTimer = 0.1;
-            placeCard(drop.r, drop.c, STOP_TEXTS[Math.floor(Math.random() * STOP_TEXTS.length)]);
+            placeCard(drop.r, drop.c, STOP_TEXTS[Math.floor(Math.random() * STOP_TEXTS.length)], 'STOP');
           }
 
         } else {
@@ -543,21 +594,26 @@ export function initPathDrops(cvs) {
                   if (drops.length < CONFIG.drops.max)
                     spawnFromRect(nn.r, nn.c, nn.w, nn.h, nn.id);
               } else {
-                placeCard(drop.r, drop.c, WALL_TEXTS[Math.floor(Math.random() * WALL_TEXTS.length)]);
+                placeCard(drop.r, drop.c, WALL_TEXTS[Math.floor(Math.random() * WALL_TEXTS.length)], 'ALERT');
               }
             } else {
-              placeCard(drop.r, drop.c, WALL_TEXTS[Math.floor(Math.random() * WALL_TEXTS.length)]);
+              placeCard(drop.r, drop.c, WALL_TEXTS[Math.floor(Math.random() * WALL_TEXTS.length)], 'ALERT');
             }
           } else if (hCard) {
             // Always place a card here too
-            placeCard(drop.r, drop.c, PATH_TEXTS[Math.floor(Math.random() * PATH_TEXTS.length)]);
+            placeCard(drop.r, drop.c, PATH_TEXTS[Math.floor(Math.random() * PATH_TEXTS.length)], 'PATH');
           } else {
             // Dead end on path — higher chance of card
             if (Math.random() < CONFIG.card.pathCardChance)
-              placeCard(drop.r, drop.c, PATH_TEXTS[Math.floor(Math.random() * PATH_TEXTS.length)]);
+              placeCard(drop.r, drop.c, PATH_TEXTS[Math.floor(Math.random() * PATH_TEXTS.length)], 'PATH');
             else {
               const cell = grid[drop.r][drop.c];
               cell.blocked = true; cell.isCard = true;
+              cell.val = 0;
+              cell.boxText = '◈';
+              cell.intensity = 1.0;
+              cell.life = 4.5;
+              cell.age = 0;
               markDirty(drop.r, drop.c);
             }
           }
@@ -620,55 +676,156 @@ export function initPathDrops(cvs) {
           ctx.fillText(char, px, py);
         }
         if (cell.boxText) {
-          ctx.fillStyle = `rgba(145,142,158,${cell.intensity * 0.68})`;
-          ctx.fillText(cell.boxText, px, py);
+          // A. Parlama Halesi (Screen Blend)
+          if (endpointBeaconSprite) {
+            ctx.globalCompositeOperation = 'screen';
+            ctx.drawImage(endpointBeaconSprite, px - 16, py - 16);
+            ctx.globalCompositeOperation = 'source-over';
+          }
+          // B. Hassas Mikro Baklava Test Padi
+          ctx.strokeStyle = `rgba(0, 240, 255, ${cell.intensity * 0.85})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(px, py - 4.5);
+          ctx.lineTo(px + 4.5, py);
+          ctx.lineTo(px, py + 4.5);
+          ctx.lineTo(px - 4.5, py);
+          ctx.closePath();
+          ctx.stroke();
+
+          // C. Optik Retikül Çentikleri
+          ctx.beginPath();
+          ctx.moveTo(px - 6.5, py); ctx.lineTo(px - 4.5, py);
+          ctx.moveTo(px + 4.5, py); ctx.lineTo(px + 6.5, py);
+          ctx.moveTo(px, py - 6.5); ctx.lineTo(px, py - 4.5);
+          ctx.moveTo(px, py + 4.5); ctx.lineTo(px, py + 6.5);
+          ctx.stroke();
+
+          // D. Yüksek Enerjili Beyaz Çekirdek
+          ctx.fillStyle = `rgba(255, 255, 255, ${cell.intensity * 0.95})`;
+          ctx.beginPath();
+          ctx.arc(px, py, 1.4, 0, Math.PI * 2);
+          ctx.fill();
         }
       }
 
-      // 2. Live heads
+      // 2. Canlı Başlıklar (Head Droplets)
       for (let i = 0; i < drops.length; i++) {
         const drop = drops[i];
         if (drop.state !== DROP_STATES.ALIVE) continue;
         const cell = grid[drop.r][drop.c];
         const char = CHAR_MAP[cell.val] || '█';
         const px = drop.c * CELL_W + CELL_W / 2, py = drop.r * CELL_H + CELL_H / 2;
-        ctx.fillStyle = headColor();
-        ctx.fillText(char, px, py);
 
         if (headGlowSprite) {
           ctx.globalCompositeOperation = 'screen';
-          ctx.drawImage(headGlowSprite, px - 12, py - 12);
+          ctx.drawImage(headGlowSprite, px - 18, py - 18);
           ctx.globalCompositeOperation = 'source-over';
         }
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(char, px, py);
       }
 
-      // 3. Render Cards gathered from active set
+      // 3. Kart Uç Noktaları (Cyber Badges & Endpoint Solder Terminals)
       if (activeCards.length > 0) {
-        setFont('bold 11px "Share Tech Mono",monospace');
+        setFont('bold 10px "Share Tech Mono",monospace');
         for (let i = 0; i < activeCards.length; i++) {
           const { r, c, cell } = activeCards[i];
           const boxW = cell.cardWCells || 4;
           const px = c * CELL_W + (CELL_W * boxW) / 2;
           const py = r * CELL_H + (CELL_H * 2) / 2;
           const textW = ctx.measureText(cell.cardLabel).width;
-          const cw = Math.max(CELL_W * boxW, textW + 18);
-          const ch = CELL_H + 4;
+          const cw = Math.max(CELL_W * boxW + 8, textW + 30);
+          const ch = CELL_H + 5;
           const sx = px - cw / 2, sy = py - ch / 2;
-          ctx.fillStyle = cardBg(cell.intensity * 0.92);
-          ctx.fillRect(sx, sy, cw, ch);
-          ctx.strokeStyle = cardBorder(cell.intensity * 0.68);
+          const cType = cell.cardType || 'PATH';
+          const int = cell.intensity;
+
+          // Kategoriye göre renk ve efekt ayrımı
+          let bgR, bgG, bgB, bR, bG, bB, textCol, beaconSprite;
+          if (cType === 'ALERT') {
+            bgR = 18; bgG = 4; bgB = 6;
+            bR = 255; bG = 65; bB = 65;
+            textCol = `rgba(255, 220, 215, ${int})`;
+            beaconSprite = alertBeaconSprite;
+          } else if (cType === 'STOP') {
+            bgR = 2; bgG = 16; bgB = 12;
+            bR = 0; bG = 255; bB = 175;
+            textCol = `rgba(205, 255, 235, ${int})`;
+            beaconSprite = checkpointBeaconSprite;
+          } else {
+            bgR = 2; bgG = 12; bgB = 22;
+            bR = 0; bG = 230; bB = 255;
+            textCol = `rgba(215, 245, 255, ${int})`;
+            beaconSprite = endpointBeaconSprite;
+          }
+
+          // A. 45 Derece Pahlı (Chamfered) Siber Rozet
+          const cut = 5;
+          ctx.beginPath();
+          ctx.moveTo(sx + cut, sy);
+          ctx.lineTo(sx + cw - 1, sy);
+          ctx.lineTo(sx + cw - 1, sy + ch - cut);
+          ctx.lineTo(sx + cw - 1 - cut, sy + ch);
+          ctx.lineTo(sx, sy + ch);
+          ctx.lineTo(sx, sy + cut);
+          ctx.closePath();
+
+          ctx.fillStyle = `rgba(${bgR},${bgG},${bgB},${int * 0.94})`;
+          ctx.fill();
+
+          ctx.strokeStyle = `rgba(${bR},${bG},${bB},${int * 0.85})`;
           ctx.lineWidth = 1;
-          ctx.strokeRect(sx, sy, cw, ch);
-          ctx.strokeStyle = cardBorder(cell.intensity * 0.25);
-          ctx.setLineDash([2, 4]);
+          ctx.stroke();
+
+          // B. Üst Sağ Teknik Çentik Vurgusu
+          ctx.strokeStyle = `rgba(${bR},${bG},${bB},${int * 0.95})`;
+          ctx.beginPath();
+          ctx.moveTo(sx + cw - 12, sy);
+          ctx.lineTo(sx + cw - 1, sy);
+          ctx.stroke();
+
+          // C. Durum LED Beaconi (Sol ikon)
+          const ledX = sx + 10;
+          const ledY = py;
+          if (beaconSprite) {
+            ctx.globalCompositeOperation = 'screen';
+            ctx.drawImage(beaconSprite, ledX - 16, ledY - 16);
+            ctx.globalCompositeOperation = 'source-over';
+          }
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(ledX, ledY, 1.6, 0, Math.PI * 2);
+          ctx.fill();
+
+          // D. Etiket Metni
+          ctx.fillStyle = textCol;
+          ctx.textAlign = 'left';
+          ctx.fillText(cell.cardLabel, sx + 20, py + 1);
+
+          // E. Devre Hattı Kökü & Terminal Lehim Halkası (◎)
+          const stemEndY = sy + ch + CELL_H * 0.42;
+          ctx.strokeStyle = `rgba(${bR},${bG},${bB},${int * 0.6})`;
+          ctx.lineWidth = 1;
+          ctx.setLineDash([2, 2]);
           ctx.beginPath();
           ctx.moveTo(px, sy + ch);
-          ctx.lineTo(px, sy + ch + CELL_H * 0.38);
+          ctx.lineTo(px, stemEndY);
           ctx.stroke();
           ctx.setLineDash([]);
-          ctx.fillStyle = cardText(cell.intensity);
-          ctx.fillText(cell.cardLabel, px, py + 1);
+
+          // Terminal Lehim Padi (◎)
+          ctx.strokeStyle = `rgba(${bR},${bG},${bB},${int * 0.85})`;
+          ctx.beginPath();
+          ctx.arc(px, stemEndY, 2.5, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(px, stemEndY, 1.0, 0, Math.PI * 2);
+          ctx.fill();
         }
+        ctx.textAlign = 'center';
       }
 
       // 4. Nodes
