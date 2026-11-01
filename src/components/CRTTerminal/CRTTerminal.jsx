@@ -78,14 +78,6 @@ export default function CRTTerminal() {
     const zineTextureImg = new Image();
     zineTextureImg.src = '/switch-zine-texture.png';
 
-    // Goz Anomali Videosu (Hata / Meltdown aninda SWITCH arkasinda doner)
-    const eyeVideo = document.createElement('video');
-    eyeVideo.src = '/eye-anomaly.mp4';
-    eyeVideo.muted = true;
-    eyeVideo.playsInline = true;
-    eyeVideo.preload = 'auto';
-    eyeVideo.loop = true;
-
     if (document.fonts) {
       document.fonts.load('64px "VCR OSD Mono"');
       document.fonts.load('64px "VCR OST Mono"');
@@ -317,22 +309,6 @@ export default function CRTTerminal() {
         currentLines = currentEvt.lines;
       }
 
-      // Meltdown kontrolu: Tirad monologu bittikten sonra baslayan hata firtinasi (Clear oncesi)
-      const isMeltdownActive = typeState.isTiradeActive && (typeState.lineIdx >= PEPSI_DIALOGUE_SRC.length);
-
-      // Goz Anomali Videosu Yonetimi: Meltdown'da baslar, ekrana clear atildiginda durup sifirlanir
-      if (isMeltdownActive) {
-        if (eyeVideo.paused) {
-          eyeVideo.currentTime = 0;
-          eyeVideo.play().catch(() => {});
-        }
-      } else {
-        if (!eyeVideo.paused) {
-          eyeVideo.pause();
-          eyeVideo.currentTime = 0;
-        }
-      }
-
       if (now >= typeState.pauseUntil) {
         terminalDirty = true;
         if (currentEvt.mode === 'tirade') {
@@ -351,10 +327,6 @@ export default function CRTTerminal() {
               typeState.lineIdx = 0;
               typeState.charIdx = 0;
               typeState.isTiradeActive = false;
-              if (!eyeVideo.paused) {
-                eyeVideo.pause();
-                eyeVideo.currentTime = 0;
-              }
               typeState.pauseUntil = now + 900;
               typeState.eventIdx = (typeState.eventIdx + 1) % REGULAR_EVENTS.length;
             } else {
@@ -489,11 +461,10 @@ export default function CRTTerminal() {
       sceneCtx.lineWidth = 2;
       sceneCtx.stroke();
 
-      // Logo: SWITCH (Meltdown glitch etkisi)
-      const headerGlitchX = isMeltdownActive ? Math.round((Math.random() - 0.5) * 5) : 0;
-      sceneCtx.fillStyle = isMeltdownActive ? ((Math.random() < 0.25) ? '#ffffff' : '#ff1a1a') : '#ff3b3b';
+      // Logo: SWITCH
+      sceneCtx.fillStyle = '#ff3b3b';
       sceneCtx.font = 'bold 38px "Share Tech Mono", monospace';
-      sceneCtx.fillText('SWITCH', avatarCenterX + 44 + headerGlitchX, avatarCenterY + 12);
+      sceneCtx.fillText('SWITCH', avatarCenterX + 44, avatarCenterY + 12);
 
       // Muzik / Spotify Bilgisi
       if (p.spotify) {
@@ -531,7 +502,7 @@ export default function CRTTerminal() {
       sceneCtx.lineTo(HEADER_LEFT_WIDTH, HEADER_HEIGHT);
       sceneCtx.stroke();
 
-      sceneCtx.strokeStyle = isMeltdownActive ? '#ff1414' : '#661414';
+      sceneCtx.strokeStyle = '#661414';
       sceneCtx.lineWidth = 2;
       sceneCtx.beginPath();
       sceneCtx.moveTo(0, HEADER_HEIGHT);
@@ -551,65 +522,18 @@ export default function CRTTerminal() {
       const boxX = width - padX - boxW;
       const boxY = HEADER_HEIGHT + padY;
 
-      // D1. SOL TARAF: UST YATAY BASLIK BANNERI (Meltdown'da Goz Videosu + SWITCH)
+      // D1. SOL TARAF: UST YATAY BASLIK BANNERI (Tek cagrida GPU blit)
       const rectX = padX;
       const rectY = boxY;
       const rectW = Math.max(50, (boxX - padX) - rectX);
       const rectH = Math.min(135, Math.max(88, Math.round(boxH * 0.20)));
 
       if (rectW > 60 && rectH > 40) {
-        if (isMeltdownActive && eyeVideo.readyState >= 2) {
-          sceneCtx.save();
-          sceneCtx.beginPath();
-          sceneCtx.rect(rectX, rectY, rectW, rectH);
-          sceneCtx.clip();
-
-          // 1. Zine Doku Arka Plani (Banner'in tamami zine dokusuyla dolsun)
-          if (cachedBannerCanvas) {
-            sceneCtx.drawImage(cachedBannerCanvas, rectX, rectY);
-          } else {
-            sceneCtx.fillStyle = '#121316';
-            sceneCtx.fillRect(rectX, rectY, rectW, rectH);
-          }
-
-          // 2. Goz Videosu (Boyutu orantili sekilde kucultulmus, gozu tam ve net gosteren olcek)
-          const vw = eyeVideo.videoWidth || 720;
-          const vh = eyeVideo.videoHeight || 900;
-          
-          // Kutu yuksekligine gore orantilayarak asiri 9x zoom kesildi, tum goz eksiksiz gorunur
-          const scale = (rectH * 1.18) / vh;
-          const dw = Math.round(vw * scale);
-          const dh = Math.round(vh * scale);
-          const dx = Math.round(rectX + (rectW - dw) / 2);
-          const dy = Math.round(rectY + (rectH - dh) / 2);
-
-          // Video altina hafif koyu kontrast katmani
-          sceneCtx.fillStyle = 'rgba(0, 0, 0, 0.40)';
-          sceneCtx.fillRect(rectX, rectY, rectW, rectH);
-
-          // Videoyu tam ortada ciz
-          sceneCtx.drawImage(eyeVideo, dx, dy, dw, dh);
-
-          // 3. 'SWITCH' Yazisi: VCR OSD Mono fontu ile gozun onunde stabil, net ve parildayarak durur
-          const fontSize = Math.min(Math.round(rectH * 0.42), Math.round(rectW * 0.16));
-          sceneCtx.font = `bold ${fontSize}px "VCR OSD Mono", monospace`;
-          sceneCtx.textAlign = 'center';
-          sceneCtx.textBaseline = 'middle';
-          sceneCtx.fillStyle = '#ede8dc';
-          sceneCtx.shadowColor = 'rgba(237, 232, 220, 0.75)';
-          sceneCtx.shadowBlur = 10;
-          sceneCtx.fillText('SWITCH', rectX + rectW / 2, rectY + rectH / 2);
-
-          // 4. Kose kirmizi neon braketler (SWITCH kutusu tamamen stabil ve net kalir)
-          drawNeonBrackets(sceneCtx, rectX, rectY, rectW, rectH, 22, 3);
-          sceneCtx.restore();
+        if (cachedBannerCanvas) {
+          sceneCtx.drawImage(cachedBannerCanvas, rectX, rectY);
         } else {
-          if (cachedBannerCanvas) {
-            sceneCtx.drawImage(cachedBannerCanvas, rectX, rectY);
-          } else {
-            sceneCtx.fillStyle = '#121316';
-            sceneCtx.fillRect(rectX, rectY, rectW, rectH);
-          }
+          sceneCtx.fillStyle = '#121316';
+          sceneCtx.fillRect(rectX, rectY, rectW, rectH);
         }
       }
 
@@ -725,43 +649,25 @@ export default function CRTTerminal() {
         const chipY = boxY + 14;
 
         sceneCtx.save();
-        if (isMeltdownActive) {
-          sceneCtx.fillStyle = 'rgba(40, 4, 8, 0.88)';
-          sceneCtx.fillRect(chipX, chipY - 10, chipW, chipH);
-          sceneCtx.strokeStyle = '#ff2222';
-          sceneCtx.lineWidth = 1;
-          sceneCtx.strokeRect(chipX, chipY - 10, chipW, chipH);
+        sceneCtx.fillStyle = 'rgba(0, 18, 30, 0.75)';
+        sceneCtx.fillRect(chipX, chipY - 10, chipW, chipH);
+        sceneCtx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
+        sceneCtx.lineWidth = 1;
+        sceneCtx.strokeRect(chipX, chipY - 10, chipW, chipH);
 
-          const pulseAlert = Math.sin(now * 0.02) * 0.4 + 0.6;
-          sceneCtx.beginPath();
-          sceneCtx.arc(chipX + 8, chipY - 2.5, 2.5, 0, Math.PI * 2);
-          sceneCtx.fillStyle = `rgba(255, 30, 30, ${pulseAlert})`;
-          sceneCtx.fill();
+        const pulseAlpha = Math.sin(now * 0.007) * 0.4 + 0.6;
+        sceneCtx.beginPath();
+        sceneCtx.arc(chipX + 8, chipY - 2.5, 2.5, 0, Math.PI * 2);
+        sceneCtx.fillStyle = `rgba(0, 240, 255, ${pulseAlpha})`;
+        sceneCtx.fill();
 
-          sceneCtx.font = 'bold 9px "Share Tech Mono", monospace';
-          sceneCtx.fillStyle = '#ff3333';
-          sceneCtx.fillText(`[ANOMALY: 0xDEAD]  ERR_PANIC`, chipX + 16, chipY);
-        } else {
-          sceneCtx.fillStyle = 'rgba(0, 18, 30, 0.75)';
-          sceneCtx.fillRect(chipX, chipY - 10, chipW, chipH);
-          sceneCtx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
-          sceneCtx.lineWidth = 1;
-          sceneCtx.strokeRect(chipX, chipY - 10, chipW, chipH);
-
-          const pulseAlpha = Math.sin(now * 0.007) * 0.4 + 0.6;
-          sceneCtx.beginPath();
-          sceneCtx.arc(chipX + 8, chipY - 2.5, 2.5, 0, Math.PI * 2);
-          sceneCtx.fillStyle = `rgba(0, 240, 255, ${pulseAlpha})`;
-          sceneCtx.fill();
-
-          sceneCtx.font = '9px "Share Tech Mono", monospace';
-          sceneCtx.fillStyle = '#00f0ff';
-          const tickVal = Math.floor(now * 0.06) % 99999;
-          sceneCtx.fillText(`TICK:${tickVal.toString().padStart(5, '0')}  SYS:60Hz`, chipX + 16, chipY);
-        }
+        sceneCtx.font = '9px "Share Tech Mono", monospace';
+        sceneCtx.fillStyle = '#00f0ff';
+        const tickVal = Math.floor(now * 0.06) % 99999;
+        sceneCtx.fillText(`TICK:${tickVal.toString().padStart(5, '0')}  SYS:60Hz`, chipX + 16, chipY);
         sceneCtx.restore();
 
-        // 4. ANATOMI CIZIMI (Saf Cyan Fosfor Pariltisi - Kirmizi Glitch Yok)
+        // 4. ANATOMI CIZIMI (Saf Cyan Fosfor Pariltisi - 0ms CPU Blur)
         const vSize = Math.round(boxH * 1.076);
         const vY = Math.round(boxY - vSize * (32 / 1080));
         const vX = Math.round(boxX + boxW - vSize * (1036 / 1080));
@@ -781,9 +687,7 @@ export default function CRTTerminal() {
         sceneCtx.restore(); // clip sonu
 
         // 4 KOSE PARLAK KIRMIZI L-BRAKETLERI
-        if (isMeltdownActive && Math.random() < 0.28) {
-          drawNeonBrackets(sceneCtx, boxX, boxY, boxW, boxH, 34, 4, '#ffffff', 'rgba(255, 255, 255, 0.95)');
-        } else if (cachedRightBracketsCanvas) {
+        if (cachedRightBracketsCanvas) {
           sceneCtx.drawImage(cachedRightBracketsCanvas, boxX - 12, boxY - 12);
         } else {
           drawNeonBrackets(sceneCtx, boxX, boxY, boxW, boxH, 34, 4);
@@ -802,32 +706,9 @@ export default function CRTTerminal() {
 
     rafId = requestAnimationFrame(renderLoop);
 
-    // Hizli onizleme ve test icin klavye kisayolu (Ctrl + Shift + E)
-    const triggerMeltdownTest = () => {
-      typeState.isTiradeActive = true;
-      typeState.lineIdx = PEPSI_DIALOGUE_SRC.length;
-      typeState.charIdx = 0;
-      typeState.pauseUntil = 0;
-      terminalDirty = true;
-    };
-    window.__triggerMeltdown = triggerMeltdownTest;
-
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === 'KeyE') {
-        triggerMeltdownTest();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', handleResize);
-      window.removeEventListener('keydown', handleKeyDown);
-      delete window.__triggerMeltdown;
-      if (!eyeVideo.paused) {
-        eyeVideo.pause();
-      }
-      eyeVideo.src = '';
       
       if (destroyMaze) destroyMaze();
       if (destroyMatrix) destroyMatrix();
