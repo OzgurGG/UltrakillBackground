@@ -107,9 +107,9 @@ const PEPSI_MELTDOWN_SRC = [
   { type: "stack", msg: "  at evaluateHumanCondition (kernel/psyche.rs:404:12)", delay: 30 },
   { type: "stack", msg: "  at recursiveParanoiaLoop (v1/allocator.ts:666:9)", delay: 30 },
   { type: "stack", msg: "  at processTicksAndRejections (task_queues:95:5)", delay: 30 },
-  { type: "panic", msg: "💥 [FATAL] KERNEL INTEGRITY BREACHED: SIGNAL 11 (SIGSEGV)", delay: 60 },
-  { type: "panic", msg: "💥 SENSORY_OVERFLOW DETECTED ON NODE 0xFA (ALL CORES PINNED 100%)", delay: 50 },
-  { type: "panic", msg: "💥 VIRTUAL_MEMORY_PANIC: PAGE_FAULT_IN_NONPAGED_AREA", delay: 50 },
+  { type: "panic", msg: "[FATAL] KERNEL INTEGRITY BREACHED: SIGNAL 11 (SIGSEGV)", delay: 60 },
+  { type: "panic", msg: "[CRIT] SENSORY_OVERFLOW DETECTED ON NODE 0xFA (ALL CORES PINNED 100%)", delay: 50 },
+  { type: "panic", msg: "[PANIC] VIRTUAL_MEMORY_PANIC: PAGE_FAULT_IN_NONPAGED_AREA", delay: 50 },
   { type: "hex",   msg: "0xDEAD00:  FF FF FF FF  00 00 00 00  DE AD BE EF  7F FF FF FF  |????????........|", delay: 40 },
   { type: "hex",   msg: "0xDEAD10:  50 45 50 53  49 20 4E 4F  54 20 46 4F  55 4E 44 21  |PEPSI NOT FOUND!|", delay: 40 },
   { type: "hex",   msg: "0xDEAD20:  21 21 21 21  21 21 21 21  21 21 21 21  21 21 21 21  |!!!!!!!!!!!!!!!!|", delay: 40 },
@@ -118,10 +118,10 @@ const PEPSI_MELTDOWN_SRC = [
   { type: "trace", msg: "RCX: 0xFFFFFFFFFFFFFFFF  RDX: 0x00007FFFFFFFFFFF", delay: 25 },
   { type: "trace", msg: "RSI: 0x0000000000000042  RDI: 0x00000000PEPSI000", delay: 25 },
   { type: "trace", msg: "RIP: 0x0000000000401337  RFL: 0x0000000000010286", delay: 25 },
-  { type: "panic", msg: "🔥 WATCHDOG TIMEOUT: BUS CONTROLLER LOCKUP DETECTED", delay: 40 },
-  { type: "panic", msg: "🔥 CORE OVERVOLTAGE TRIP: 2.18V (LIMIT: 1.25V)", delay: 40 },
-  { type: "panic", msg: "🔥 THERMAL RUNAWAY: SENSOR T_JUNCTION @ 108.4°C [CRITICAL]", delay: 40 },
-  { type: "panic", msg: "🔥 HARDWARE EXCEPTION: CORRUPTING SECTOR MAP...", delay: 40 },
+  { type: "panic", msg: "[CRIT] WATCHDOG TIMEOUT: BUS CONTROLLER LOCKUP DETECTED", delay: 40 },
+  { type: "panic", msg: "[OVERVOLT] CORE OVERVOLTAGE TRIP: 2.18V (LIMIT: 1.25V)", delay: 40 },
+  { type: "panic", msg: "[OVERHEAT] THERMAL RUNAWAY: SENSOR T_JUNCTION @ 108.4°C [CRITICAL]", delay: 40 },
+  { type: "panic", msg: "[HARDWARE] EXCEPTION: CORRUPTING SECTOR MAP...", delay: 40 },
   { type: "error", msg: "█ SYSTEM IN COMA: ESCALATING PRIVILEGE ESCAPE DETECTED █", delay: 70 },
   { type: "error", msg: "KERNEL PANIC: ATTEMPTED TO KILL INIT! exitcode=0x0000000b", delay: 60 },
   { type: "error", msg: "HALTING ALL THREADS... [HARD RESET TRIGGERED]", delay: 70 },
@@ -143,7 +143,7 @@ function buildFullPepsiMeltdown(username) {
       if (raw.startsWith('INPUT_REQUIRED') || raw.startsWith('ERR_') || raw.startsWith('ACCESS_')) {
         line = `█ ${raw} █`;
       } else {
-        line = `⚠️ [SYS] ${raw}`;
+        line = `[SYS] ${raw}`;
       }
     }
     return {
@@ -210,8 +210,8 @@ const REGULAR_EVENTS = [
       "  at runGenerationLoop (PathDrops.jsx:112:5)",
       "  at HTMLCanvasElement.<anonymous> (CRTTerminal.jsx:325:18)",
       "  at processTicksAndRejections (task_queues:95:5)",
-      "⚠️ [WARN] Watchdog restarting corrupted worker thread...",
-      "✓ [RECOVERY] Sandbox isolated. Core dumped to /tmp/core.941"
+      "[WARN] Watchdog restarting corrupted worker thread...",
+      "[OK] [RECOVERY] Sandbox isolated. Core dumped to /tmp/core.941"
     ]
   },
   // 4. Teknik: Sistem Performans Metrikleri & ASCII Sparklines (Loading barları kaldırıldı)
@@ -250,7 +250,7 @@ const REGULAR_EVENTS = [
       "  false,",
       "  ['encrypt', 'decrypt']",
       ");",
-      "✓ [SECURE] TLS_AES_256_GCM_SHA384 ESTABLISHED"
+      "[OK] [SECURE] TLS_AES_256_GCM_SHA384 ESTABLISHED"
     ]
   },
   // 7. Teknik: x86_64 Makine Dili Analizörü (Disassembly)
@@ -316,9 +316,9 @@ const REGULAR_EVENTS = [
     lines: [
       "BITSTREAM: 11010010 01001101 10101111 00100101 [CRC_OK]",
       "BITSTREAM: 00101011 11100010 01100101 11110001 [CRC_OK]",
-      "BITSTREAM: 11110000 00001111 10100101 01011010 [PARITY_ERR ⚠️]",
-      "⚡ [HAMMING] Auto-correcting single-bit syndrome...",
-      "RECOVERED: 11110000 00001111 10100101 01011011 [FIXED ✓]"
+      "BITSTREAM: 11110000 00001111 10100101 01011010 [PARITY_ERR]",
+      "[PWR] [HAMMING] Auto-correcting single-bit syndrome...",
+      "RECOVERED: 11110000 00001111 10100101 01011011 [FIXED OK]"
     ]
   },
   // 11. Teknik: Kutulu ASCII Modül Ağacı ve Şema
@@ -355,9 +355,9 @@ const REGULAR_EVENTS = [
       "$ vite build --mode production",
       "vite v6.4.5 building for production...",
       "transforming (38) modules...",
-      "✓ 38 modules transformed in 184ms",
+      "[OK] 38 modules transformed in 184ms",
       "dist/assets/index-CrYYBDTP.js   775.5 kB │ gzip: 211.4 kB",
-      "✓ built successfully in 2.14s"
+      "[OK] built successfully in 2.14s"
     ]
   },
   // 14. Teknik: SyntaxError ve Otomatik İyileşme
@@ -369,8 +369,8 @@ const REGULAR_EVENTS = [
       "  at JSON.parse (<anonymous>)",
       "  at parseTelemetryStream (CultStream.jsx:88:22)",
       "  at WebSocket.onmessage (CRTTerminal.jsx:194:12)",
-      "⚠️ [WARN] Dropping malformed telemetry packet [CRC: 0x9AF0]",
-      "✓ Stream pipeline recovered. Resuming normal loop..."
+      "[WARN] Dropping malformed telemetry packet [CRC: 0x9AF0]",
+      "[OK] Stream pipeline recovered. Resuming normal loop..."
     ]
   },
   // 15. Teknik: Optik Hedef Kitleme Telemetrisi (Scramble)
@@ -442,9 +442,9 @@ const REGULAR_EVENTS = [
       "  at Array.map (<anonymous>)",
       "  at buildSubdivisionTree (PathDrops.jsx:512:14)",
       "  at HTMLCanvasElement.renderLoop (CRTTerminal.jsx:920:9)",
-      "⚡ [SWEEP] Forcing generational garbage collection...",
-      "⚡ [RECLAIM] 142.8 MB freed across 3 heap segments.",
-      "✓ Memory pressure resolved: 22% heap allocated (32.4MB)"
+      "[SYS] [SWEEP] Forcing generational garbage collection...",
+      "[SYS] [RECLAIM] 142.8 MB freed across 3 heap segments.",
+      "[OK] Memory pressure resolved: 22% heap allocated (32.4MB)"
     ]
   },
   // 20. Teknik: Test Paketi Çıktısı
@@ -455,7 +455,7 @@ const REGULAR_EVENTS = [
       "PASS test/maze_backtracker.test.js (6 tests, 6 passed)",
       "PASS test/cult_stream.test.js (12 tests, 12 passed)",
       "PASS test/crt_curvature.test.js (4 tests, 4 passed)",
-      "✓ 22 tests passed in 48ms",
+      "[OK] 22 tests passed in 48ms",
       "[SYS] Kernel state synchronized :: V1_READY"
     ]
   }
@@ -545,7 +545,7 @@ function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
     return;
   }
 
-  // 2. HATA VE ÇÖKÜŞ SATIRLARI (Uncaught, TypeError, SyntaxError, RangeError, FATAL, [PANIC], 💥, 🔥)
+  // 2. HATA VE ÇÖKÜŞ SATIRLARI (Uncaught, TypeError, SyntaxError, RangeError, FATAL, [PANIC], [CRIT])
   if (
     trimmed.startsWith('Uncaught') ||
     trimmed.startsWith('TypeError') ||
@@ -555,8 +555,10 @@ function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
     trimmed.startsWith('FATAL:') ||
     trimmed.startsWith('[FATAL]') ||
     trimmed.startsWith('[PANIC]') ||
-    trimmed.startsWith('💥') ||
-    trimmed.startsWith('🔥') ||
+    trimmed.startsWith('[CRIT]') ||
+    trimmed.startsWith('[OVERVOLT]') ||
+    trimmed.startsWith('[OVERHEAT]') ||
+    trimmed.startsWith('[HARDWARE]') ||
     trimmed.startsWith('KERNEL PANIC:')
   ) {
     // CRT Glitch titremesi (Kritik hata anında 1-3px yatay jitter)
@@ -729,8 +731,8 @@ function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
     return;
   }
 
-  // 10. ÇÖP TOPLAYICI & SİBER YILDIRIM SATIRLARI (⚡ ...)
-  if (trimmed.startsWith('⚡')) {
+  // 10. SISTEM VE ENERJI SATIRLARI ([PWR], [SYS], [OPT])
+  if (trimmed.startsWith('[PWR]') || trimmed.startsWith('[SYS]') || trimmed.startsWith('[OPT]')) {
     ctx.fillStyle = '#ffcc00';
     ctx.font = 'bold 10.5px "Share Tech Mono", monospace';
     ctx.fillText(text, x, y);
@@ -768,16 +770,16 @@ function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
     return;
   }
 
-  // 13. UYARI SATIRLARI (⚠️, [WARN], Warning:)
-  if (trimmed.startsWith('⚠️') || trimmed.startsWith('[WARN]') || trimmed.startsWith('Warning:')) {
+  // 13. UYARI SATIRLARI ([WARN], Warning:)
+  if (trimmed.startsWith('[WARN]') || trimmed.startsWith('Warning:')) {
     ctx.fillStyle = '#ffaa00';
     ctx.font = 'bold 11px "Share Tech Mono", monospace';
     ctx.fillText(text, x, y);
     return;
   }
 
-  // 14. BAŞARI / TEST SATIRLARI (✓, PASS, RECOVERED:)
-  if (trimmed.startsWith('✓') || trimmed.startsWith('PASS') || trimmed.startsWith('RECOVERED:')) {
+  // 14. BASARI / TEST SATIRLARI ([OK], PASS, RECOVERED:)
+  if (trimmed.startsWith('[OK]') || trimmed.startsWith('PASS') || trimmed.startsWith('RECOVERED:')) {
     ctx.fillStyle = '#39ff14';
     ctx.font = 'bold 11px "Share Tech Mono", monospace';
     ctx.fillText(text, x, y);
