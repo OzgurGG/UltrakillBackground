@@ -1,6 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
-import { LanyardManager } from '../../LanyardManager';
 import { initPathDrops } from '../SnakeGame_PathDrops/PathDrops';
 import { initCultStream } from '../Header/backgrounds/CultStream/CultStream';
 import { crtConfig } from '../../config/crtConfig';
@@ -9,30 +8,8 @@ import { buildFullPepsiMeltdown, REGULAR_EVENTS, PEPSI_DIALOGUE_SRC } from './te
 import { renderCodeLine, drawNeonBrackets, SCRAMBLE_CHARS } from './terminalRenderer';
 import './CRTTerminal.css';
 
-const HEADER_HEIGHT = 140;
-const HEADER_LEFT_WIDTH = 360;
-
 export default function CRTTerminal() {
   const mountRef = useRef(null);
-  const [profil, setProfil] = useState({
-    avatarUrl: "https://cdn.discordapp.com/embed/avatars/0.png",
-    status: "offline",
-    musicText: null,
-    spotify: null,
-    username: "ozgur"
-  });
-
-  const profilRef = useRef(profil);
-  profilRef.current = profil;
-
-  // Lanyard Baglantisi
-  useEffect(() => {
-    const manager = new LanyardManager("1092374832856961106", (canliVeri) => {
-      if (canliVeri) setProfil(canliVeri);
-    });
-    manager.connect();
-    return () => manager.disconnect();
-  }, []);
 
   // WebGL ve Kompozit Sahne Motoru
   useEffect(() => {
@@ -50,26 +27,25 @@ export default function CRTTerminal() {
     const sceneCtx = sceneCanvas.getContext('2d');
     sceneCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
 
-    // 2. Alt Modul Tuvali: Labirent (PathDrops)
+    // 2. Alt Modul Tuvali: Labirent (PathDrops) - Tam Ekran
     const mazeCanvas = document.createElement('canvas');
     mazeCanvas.width = width * DPR;
-    mazeCanvas.height = Math.max(10, height - HEADER_HEIGHT) * DPR;
+    mazeCanvas.height = height * DPR;
     mazeCanvas.style.width = width + 'px';
-    mazeCanvas.style.height = Math.max(10, height - HEADER_HEIGHT) + 'px';
+    mazeCanvas.style.height = height + 'px';
     const destroyMaze = initPathDrops(mazeCanvas);
 
-    // 3. Alt Modul Tuvali: Header Matrix Akisi (CultStream)
+    // 3. Alt Modul Tuvali: SWITCH Kutusu Arka Plan Matrix Akisi (CultStream)
     const matrixCanvas = document.createElement('canvas');
-    matrixCanvas.width = Math.max(10, width - HEADER_LEFT_WIDTH) * DPR;
-    matrixCanvas.height = HEADER_HEIGHT * DPR;
-    matrixCanvas.style.width = Math.max(10, width - HEADER_LEFT_WIDTH) + 'px';
-    matrixCanvas.style.height = HEADER_HEIGHT + 'px';
-    const destroyMatrix = initCultStream(matrixCanvas, 'back');
-
-    // Discord Avatar Resmi
-    const avatarImg = new Image();
-    avatarImg.crossOrigin = 'anonymous';
-    avatarImg.src = profilRef.current.avatarUrl;
+    let destroyMatrix = null;
+    function setupMatrix(mw, mh) {
+      if (destroyMatrix) destroyMatrix();
+      matrixCanvas.width = Math.max(10, mw) * DPR;
+      matrixCanvas.height = Math.max(10, mh) * DPR;
+      matrixCanvas.style.width = Math.max(10, mw) + 'px';
+      matrixCanvas.style.height = Math.max(10, mh) + 'px';
+      destroyMatrix = initCultStream(matrixCanvas, 'back');
+    }
 
     // Vitruvian V1 Optik Efektli Cizim
     const vitruvianLedImg = new Image();
@@ -122,53 +98,7 @@ export default function CRTTerminal() {
     vitruvianLedImg.onload = bakeVitruvian;
     if (vitruvianLedImg.complete && vitruvianLedImg.naturalWidth > 0) bakeVitruvian();
 
-    // 2. Sol Header Banner Canvas (Zine Doku + SWITCH + Kirmizi Braketler)
-    let cachedBannerCanvas = null;
-    function bakeBanner(bw, bh) {
-      if (bw <= 60 || bh <= 40) return;
-      const c = document.createElement('canvas');
-      c.width = bw;
-      c.height = bh;
-      const cCtx = c.getContext('2d');
-
-      cCtx.fillStyle = '#121316';
-      cCtx.fillRect(0, 0, bw, bh);
-
-      if (zineTextureImg.complete && zineTextureImg.naturalWidth > 0) {
-        try {
-          const pat = cCtx.createPattern(zineTextureImg, 'repeat');
-          if (pat) {
-            cCtx.fillStyle = pat;
-            cCtx.fillRect(0, 0, bw, bh);
-          }
-        } catch (e) {}
-      }
-
-      const titleSize = Math.max(34, Math.min(68, Math.floor(bh * 0.44)));
-      cCtx.save();
-      cCtx.font = `bold ${titleSize}px "VCR OSD Mono", "VCR OST Mono", monospace`;
-      cCtx.textAlign = 'center';
-      cCtx.textBaseline = 'middle';
-      cCtx.fillStyle = '#ede8dc';
-      cCtx.shadowColor = 'rgba(237, 232, 220, 0.45)';
-      cCtx.shadowBlur = 8;
-      cCtx.fillText('SWITCH', bw / 2, bh / 2);
-      cCtx.restore();
-
-      drawNeonBrackets(cCtx, 0, 0, bw, bh, 22, 3);
-      cachedBannerCanvas = c;
-    }
-    zineTextureImg.onload = () => {
-      const bH = Math.max(10, height - HEADER_HEIGHT);
-      const bBoxH = bH - 24;
-      const bBoxW = bBoxH;
-      const bBoxX = width - 18 - bBoxW;
-      const bRectW = Math.max(50, (bBoxX - 18) - 18);
-      const bRectH = Math.min(135, Math.max(88, Math.round(bBoxH * 0.20)));
-      bakeBanner(bRectW, bRectH);
-    };
-
-    // 3. Sag Kutu Neon Braketler Canvas (Tek seferlik cizim)
+    // 2. Sag Kutu Neon Braketler Canvas (Tek seferlik cizim)
     let cachedRightBracketsCanvas = null;
     function bakeRightBrackets(bw, bh) {
       if (bw <= 50 || bh <= 50) return;
@@ -181,13 +111,13 @@ export default function CRTTerminal() {
       cachedRightBracketsCanvas = c;
     }
 
-    // 4. Ayrik Kod Terminal Tuvali (Event-Driven Text Buffer)
+    // 3. Ayrik Kod Terminal Tuvali (Event-Driven Text Buffer)
     const terminalCanvas = document.createElement('canvas');
     const terminalCtx = terminalCanvas.getContext('2d');
     let terminalDirty = true;
     let frameCounter = 0;
 
-    // 5. Three.js Sahnesi ve WebGL Renderer
+    // 4. Three.js Sahnesi ve WebGL Renderer
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
@@ -228,24 +158,18 @@ export default function CRTTerminal() {
       sceneCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
 
       mazeCanvas.width = width * DPR;
-      mazeCanvas.height = Math.max(10, height - HEADER_HEIGHT) * DPR;
+      mazeCanvas.height = height * DPR;
       mazeCanvas.style.width = width + 'px';
-      mazeCanvas.style.height = Math.max(10, height - HEADER_HEIGHT) + 'px';
+      mazeCanvas.style.height = height + 'px';
 
-      matrixCanvas.width = Math.max(10, width - HEADER_LEFT_WIDTH) * DPR;
-      matrixCanvas.height = HEADER_HEIGHT * DPR;
-      matrixCanvas.style.width = Math.max(10, width - HEADER_LEFT_WIDTH) + 'px';
-      matrixCanvas.style.height = HEADER_HEIGHT + 'px';
-
-      const bH = Math.max(10, height - HEADER_HEIGHT);
-      const pX = 18, pY = 12;
-      const bBoxH = bH - pY * 2;
+      const pX = 18, pY = 16;
+      const bBoxH = height - pY * 2;
       const bBoxW = bBoxH;
       const bBoxX = width - pX - bBoxW;
       const bRectW = Math.max(50, (bBoxX - pX) - pX);
-      const bRectH = Math.min(135, Math.max(88, Math.round(bBoxH * 0.20)));
+      const bRectH = Math.min(135, Math.max(88, Math.round(bBoxH * 0.18)));
 
-      bakeBanner(bRectW, bRectH);
+      setupMatrix(bRectW, bRectH);
       bakeRightBrackets(bBoxW, bBoxH);
 
       const tW = Math.max(10, bBoxW - 32);
@@ -258,7 +182,7 @@ export default function CRTTerminal() {
     handleResize();
     window.addEventListener('resize', handleResize);
 
-    // 6. Ana Cizim & Bukme Dongusu (60 FPS)
+    // 5. Ana Cizim & Bukme Dongusu (60 FPS)
     let rafId;
 
     const typeState = {
@@ -289,13 +213,9 @@ export default function CRTTerminal() {
     function renderLoop() {
       const now = performance.now();
       frameCounter++;
-      const p = profilRef.current;
-      if (avatarImg.src !== p.avatarUrl) {
-        avatarImg.src = p.avatarUrl;
-      }
 
       // Dinamik Kod, Hata ve Burst Akis Guncellemesi
-      const uName = profilRef.current?.username || "ozgur";
+      const uName = "ozgur";
       let currentEvt;
       let currentLines;
       let tiradeItems = null;
@@ -373,30 +293,30 @@ export default function CRTTerminal() {
             typeState.lineIdx++;
             typeState.charIdx = 0;
             if (typeState.lineIdx >= currentLines.length) {
-              typeState.pauseUntil = now + 1200;
+              typeState.pauseUntil = now + 900;
               advanceNextEvent();
             } else {
-              typeState.pauseUntil = now + 40;
+              typeState.pauseUntil = now + 50;
             }
           }
         } else {
+          // type mode
           const currentLine = currentLines[typeState.lineIdx] || '';
           if (typeState.charIdx === 0) {
             const firstNonSpace = currentLine.search(/\S|$/);
             typeState.charIdx = firstNonSpace;
           }
-          typeState.charIdx = Math.min(currentLine.length, typeState.charIdx + 3);
+          typeState.charIdx = Math.min(currentLine.length, typeState.charIdx + 2);
 
           if (typeState.charIdx >= currentLine.length) {
             typeState.completedLines.push(currentLine);
             typeState.lineIdx++;
             typeState.charIdx = 0;
-
             if (typeState.lineIdx >= currentLines.length) {
-              typeState.pauseUntil = now + 1300;
+              typeState.pauseUntil = now + 900;
               advanceNextEvent();
             } else {
-              typeState.pauseUntil = now + 45;
+              typeState.pauseUntil = now + 50;
             }
           }
         }
@@ -406,138 +326,77 @@ export default function CRTTerminal() {
         }
       }
 
-      if (currentEvt.mode === 'scramble') {
-        terminalDirty = true;
-      }
-
       // --- 2D KOMPOZIT CIZIMI ---
       sceneCtx.fillStyle = '#000000';
       sceneCtx.fillRect(0, 0, width, height);
 
-      // A. HEADER SAG: CultStream Matrix
-      sceneCtx.drawImage(matrixCanvas, HEADER_LEFT_WIDTH, 0, Math.max(10, width - HEADER_LEFT_WIDTH), HEADER_HEIGHT);
+      // A. TAM EKRAN: PathDrops Labirenti
+      sceneCtx.drawImage(mazeCanvas, 0, 0, width, height);
 
-      // B. HEADER SOL PANEL (LANYARD & LOGO)
-      sceneCtx.fillStyle = 'rgba(0, 0, 0, 0.95)';
-      sceneCtx.fillRect(0, 0, HEADER_LEFT_WIDTH, HEADER_HEIGHT);
-
-      const avatarCenterX = 66;
-      const avatarCenterY = 56;
-      const avatarRadius = 30;
-
-      // Discord Avatar
-      sceneCtx.save();
-      sceneCtx.beginPath();
-      sceneCtx.arc(avatarCenterX, avatarCenterY, avatarRadius, 0, Math.PI * 2);
-      sceneCtx.clip();
-      try {
-        if (avatarImg.complete && avatarImg.naturalWidth > 0) {
-          sceneCtx.drawImage(avatarImg, avatarCenterX - avatarRadius, avatarCenterY - avatarRadius, avatarRadius * 2, avatarRadius * 2);
-        } else {
-          sceneCtx.fillStyle = '#0a0a0a';
-          sceneCtx.fillRect(avatarCenterX - avatarRadius, avatarCenterY - avatarRadius, avatarRadius * 2, avatarRadius * 2);
-        }
-      } catch (e) {}
-      sceneCtx.restore();
-
-      // Avatar Border
-      sceneCtx.beginPath();
-      sceneCtx.arc(avatarCenterX, avatarCenterY, avatarRadius, 0, Math.PI * 2);
-      sceneCtx.strokeStyle = '#8f1f1f';
-      sceneCtx.lineWidth = 1.5;
-      sceneCtx.stroke();
-
-      // Durum Yuvarlagi
-      let statusColor = '#747f8d';
-      if (p.status === 'online') statusColor = '#43b581';
-      else if (p.status === 'idle') statusColor = '#faa61a';
-      else if (p.status === 'dnd') statusColor = '#f04747';
-
-      sceneCtx.beginPath();
-      sceneCtx.arc(avatarCenterX + 22, avatarCenterY + 20, 8, 0, Math.PI * 2);
-      sceneCtx.fillStyle = statusColor;
-      sceneCtx.fill();
-      sceneCtx.strokeStyle = '#000000';
-      sceneCtx.lineWidth = 2;
-      sceneCtx.stroke();
-
-      // Logo: SWITCH
-      sceneCtx.fillStyle = '#ff3b3b';
-      sceneCtx.font = 'bold 38px "Share Tech Mono", monospace';
-      sceneCtx.fillText('SWITCH', avatarCenterX + 44, avatarCenterY + 12);
-
-      // Muzik / Spotify Bilgisi
-      if (p.spotify) {
-        const { artist, song, start, end } = p.spotify;
-        let progressStr = "0:00";
-        let durationStr = "0:00";
-        if (start && end) {
-          const durationMs = end - start;
-          const currentMs = Math.max(0, Math.min(Date.now() - start, durationMs));
-          const curSec = Math.floor(currentMs / 1000);
-          const durSec = Math.floor(durationMs / 1000);
-          progressStr = `${Math.floor(curSec / 60)}:${(curSec % 60).toString().padStart(2, '0')}`;
-          durationStr = `${Math.floor(durSec / 60)}:${(durSec % 60).toString().padStart(2, '0')}`;
-        }
-
-        sceneCtx.fillStyle = '#ff9999';
-        sceneCtx.font = 'bold 13px "Share Tech Mono", monospace';
-        const musicLine = `${artist} - ${song}`;
-        sceneCtx.fillText(musicLine.length > 30 ? musicLine.slice(0, 28) + '..' : musicLine, 36, 120);
-
-        sceneCtx.fillStyle = '#aa3333';
-        sceneCtx.font = '12px "Share Tech Mono", monospace';
-        sceneCtx.fillText(`[${progressStr} / ${durationStr}]`, 245, 120);
-      } else if (p.musicText) {
-        sceneCtx.fillStyle = '#aa4444';
-        sceneCtx.font = '12px "Share Tech Mono", monospace';
-        sceneCtx.fillText(p.musicText, 36, 120);
-      }
-
-      // Header Dikey & Yatay Ayirici Cizgiler
-      sceneCtx.strokeStyle = '#441010';
-      sceneCtx.lineWidth = 1;
-      sceneCtx.beginPath();
-      sceneCtx.moveTo(HEADER_LEFT_WIDTH, 0);
-      sceneCtx.lineTo(HEADER_LEFT_WIDTH, HEADER_HEIGHT);
-      sceneCtx.stroke();
-
-      sceneCtx.strokeStyle = '#661414';
-      sceneCtx.lineWidth = 2;
-      sceneCtx.beginPath();
-      sceneCtx.moveTo(0, HEADER_HEIGHT);
-      sceneCtx.lineTo(width, HEADER_HEIGHT);
-      sceneCtx.stroke();
-
-      // C. BODY ALANI: PathDrops Labirenti
-      sceneCtx.drawImage(mazeCanvas, 0, HEADER_HEIGHT, width, Math.max(10, height - HEADER_HEIGHT));
-
-      const bodyH = Math.max(10, height - HEADER_HEIGHT);
       const padX = 18;
-      const padY = 12;
+      const padY = 16;
 
-      // Sag taraf: Anatomi panel boyutu
-      const boxH = bodyH - padY * 2;
+      // Sag taraf: Anatomi panel boyutu (Tam ekran yukseklik)
+      const boxH = height - padY * 2;
       const boxW = boxH;
       const boxX = width - padX - boxW;
-      const boxY = HEADER_HEIGHT + padY;
+      const boxY = padY;
 
-      // D1. SOL TARAF: UST YATAY BASLIK BANNERI (Tek cagrida GPU blit)
+      // B. SOL TARAF: UST YATAY BASLIK BANNERI (Arkasinda Akan CultStream Matrix + SWITCH)
       const rectX = padX;
       const rectY = boxY;
       const rectW = Math.max(50, (boxX - padX) - rectX);
-      const rectH = Math.min(135, Math.max(88, Math.round(boxH * 0.20)));
+      const rectH = Math.min(135, Math.max(88, Math.round(boxH * 0.18)));
 
       if (rectW > 60 && rectH > 40) {
-        if (cachedBannerCanvas) {
-          sceneCtx.drawImage(cachedBannerCanvas, rectX, rectY);
-        } else {
-          sceneCtx.fillStyle = '#121316';
-          sceneCtx.fillRect(rectX, rectY, rectW, rectH);
+        sceneCtx.save();
+        sceneCtx.beginPath();
+        sceneCtx.rect(rectX, rectY, rectW, rectH);
+        sceneCtx.clip();
+
+        // 1. Koyu zemin
+        sceneCtx.fillStyle = '#050608';
+        sceneCtx.fillRect(rectX, rectY, rectW, rectH);
+
+        // 2. Canli Akan Matrix Akisi (CultStream)
+        if (matrixCanvas.width > 0 && matrixCanvas.height > 0) {
+          sceneCtx.drawImage(matrixCanvas, rectX, rectY, rectW, rectH);
         }
+
+        // 3. Yari saydam zine dokusu (vintage kagit greni)
+        if (zineTextureImg.complete && zineTextureImg.naturalWidth > 0) {
+          try {
+            sceneCtx.save();
+            sceneCtx.globalAlpha = 0.24;
+            const pat = sceneCtx.createPattern(zineTextureImg, 'repeat');
+            if (pat) {
+              sceneCtx.fillStyle = pat;
+              sceneCtx.fillRect(rectX, rectY, rectW, rectH);
+            }
+            sceneCtx.restore();
+          } catch (e) {}
+        }
+
+        // 4. Koyu karartma katmani (metin okunabilirligi ve derinlik icin)
+        sceneCtx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+        sceneCtx.fillRect(rectX, rectY, rectW, rectH);
+
+        // 5. 'SWITCH' Yazisi: VCR OSD Mono fontu ile akan matrix'in onunde parildar
+        const titleSize = Math.max(34, Math.min(68, Math.floor(rectH * 0.44)));
+        sceneCtx.font = `bold ${titleSize}px "VCR OSD Mono", "VCR OST Mono", monospace`;
+        sceneCtx.textAlign = 'center';
+        sceneCtx.textBaseline = 'middle';
+        sceneCtx.fillStyle = '#ede8dc';
+        sceneCtx.shadowColor = 'rgba(237, 232, 220, 0.85)';
+        sceneCtx.shadowBlur = 12;
+        sceneCtx.fillText('SWITCH', rectX + rectW / 2, rectY + rectH / 2);
+
+        // 6. Kose kirmizi neon braketler
+        drawNeonBrackets(sceneCtx, rectX, rectY, rectW, rectH, 22, 3);
+        sceneCtx.restore();
       }
 
-      // D2. SAG TARAF: ANATOMI KARE PANELI
+      // C. SAG TARAF: ANATOMI KARE PANELI
       if (boxW > 100 && boxH > 100) {
         sceneCtx.save();
         sceneCtx.beginPath();
@@ -549,7 +408,7 @@ export default function CRTTerminal() {
           if (frameCounter % 2 === 0) {
             frostCtx.drawImage(
               mazeCanvas,
-              boxX, Math.max(0, boxY - HEADER_HEIGHT), boxW, boxH,
+              boxX, boxY, boxW, boxH,
               0, 0, 96, 96
             );
           }
@@ -709,7 +568,6 @@ export default function CRTTerminal() {
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', handleResize);
-      
       if (destroyMaze) destroyMaze();
       if (destroyMatrix) destroyMatrix();
       renderer.dispose();
