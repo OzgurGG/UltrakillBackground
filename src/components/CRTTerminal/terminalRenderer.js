@@ -379,8 +379,19 @@ export function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
       }
       parsedTokens.push({ token, fill, font, w: token.length * CHAR_W });
     }
-    if (tokenCache.size > 250) tokenCache.clear();
-    tokenCache.set(text, parsedTokens);
+
+    // Yalnizca tamamlanmis, statik satirlari onbellege al (daktilo ara durumlarini ve scramble'i onbellege alma)
+    if (!isTyping) {
+      if (tokenCache.size > 160) {
+        // Kademeli LRU tahliyesi: En eski 30 anahtari sil (ani GC patlamasini onler)
+        let removed = 0;
+        for (const key of tokenCache.keys()) {
+          tokenCache.delete(key);
+          if (++removed >= 30) break;
+        }
+      }
+      tokenCache.set(text, parsedTokens);
+    }
   }
 
   let curX = x;

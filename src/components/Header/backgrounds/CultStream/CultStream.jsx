@@ -28,12 +28,28 @@ const glowSprite = (typeof document !== 'undefined') ? (() => {
    return c;
 })() : null;
 
-export function initCultStream(cvs, layer = 'back') {
+// Statik Renk Lookup Tablosu (Saniyede binlerce string olusumunu sifirlar)
+const COLOR_LUT = [];
+const HEAD_LUT = [];
+for (let i = 0; i <= 100; i++) {
+   const t = i / 100;
+   const rColor = Math.floor(40 + t * 200);
+   const gColor = Math.floor(5 + t * 20);
+   const bColor = Math.floor(5 + t * 20);
+   const alpha = Math.min(1.0, t * 1.2).toFixed(2);
+   COLOR_LUT[i] = `rgba(${rColor}, ${gColor}, ${bColor}, ${alpha})`;
+
+   const headAlpha = Math.min(1.0, t + 0.4).toFixed(2);
+   HEAD_LUT[i] = `rgba(255, 60, 60, ${headAlpha})`;
+}
+
+export function initCultStream(cvs, layer = 'back', autoLoop = false) {
    if (!cvs) return () => {};
    const ctx = cvs.getContext('2d');
    let raf, w, h, cols, rows;
    let grid = [];
    let streams = [];
+   const glowCells = [];
 
    function build() {
       const p = cvs.parentElement;
@@ -95,23 +111,10 @@ export function initCultStream(cvs, layer = 'back') {
       ro.observe(cvs.parentElement);
    }
 
-   let lastTime = performance.now();
    let hiddenWordTimer = 5.0 + Math.random() * 10.0;
 
-   function loop(now) {
-      const dt = Math.min((now - lastTime) / 1000, 0.05);
-      lastTime = now;
-
-      if (layer === 'back') {
-         ctx.fillStyle = '#000000';
-         ctx.fillRect(0, 0, w, h);
-      } else {
-         ctx.clearRect(0, 0, w, h);
-      }
-
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.font = 'bold 14px monospace';
+   function update(dt) {
+      if (cols === 0 || rows === 0) return;
 
       // Stream güncelleme
       for (let r = 0; r < rows; r++) {
@@ -156,9 +159,22 @@ export function initCultStream(cvs, layer = 'back') {
          }
          hiddenWordTimer = 8.0 + Math.random() * 15.0;
       }
+   }
 
-      // Çizim
-      const glowCells = [];
+   function draw() {
+      if (layer === 'back') {
+         ctx.fillStyle = '#000000';
+         ctx.fillRect(0, 0, w, h);
+      } else {
+         ctx.clearRect(0, 0, w, h);
+      }
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = 'bold 14px monospace';
+
+      // Çizim (Yeniden kullanilan dizi ve LUT ile sifir GC)
+      glowCells.length = 0;
       for (let r = 0; r < rows; r++) {
          for (let c = 0; c < cols; c++) {
             const cell = grid[r][c];
@@ -184,16 +200,14 @@ export function initCultStream(cvs, layer = 'back') {
 
             const px = c * CELL_W + CELL_W / 2;
             const py = r * CELL_H + CELL_H / 2;
+            const lutIdx = Math.min(100, Math.max(0, Math.floor(maxIntensity * 100)));
 
             if (isHead) {
-               ctx.fillStyle = `rgba(255, 60, 60, ${Math.min(1.0, maxIntensity + 0.4)})`;
+               ctx.fillStyle = HEAD_LUT[lutIdx];
                ctx.fillText(cell.char, px, py);
                glowCells.push({ px, py, intensity: maxIntensity });
             } else {
-               const rColor = Math.floor(40 + maxIntensity * 200);
-               const gColor = Math.floor(5 + maxIntensity * 20);
-               const bColor = Math.floor(5 + maxIntensity * 20);
-               ctx.fillStyle = `rgba(${rColor}, ${gColor}, ${bColor}, ${Math.min(1.0, maxIntensity * 1.2)})`;
+               ctx.fillStyle = COLOR_LUT[lutIdx];
                ctx.fillText(cell.char, px, py);
             }
          }
@@ -209,15 +223,31 @@ export function initCultStream(cvs, layer = 'back') {
          ctx.globalAlpha = 1.0;
          ctx.globalCompositeOperation = 'source-over';
       }
-
-      raf = requestAnimationFrame(loop);
    }
 
-   raf = requestAnimationFrame(loop);
-   return () => {
-      cancelAnimationFrame(raf);
+   let lastTime = performance.now();
+   function internalLoop(now) {
+      const dt = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+      update(dt);
+      draw();
+      raf = requestAnimationFrame(internalLoop);
+   }
+
+   if (autoLoop) {
+      raf = requestAnimationFrame(internalLoop);
+   }
+
+   const controller = () => {
+      if (raf) cancelAnimationFrame(raf);
       if (ro) ro.disconnect();
    };
+   controller.update = update;
+   controller.draw = draw;
+   controller.resize = build;
+   controller.destroy = controller;
+
+   return controller;
 }
 
 export default function CultStream({ layer = 'back' }) {

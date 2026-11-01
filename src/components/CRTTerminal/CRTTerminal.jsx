@@ -27,24 +27,24 @@ export default function CRTTerminal() {
     const sceneCtx = sceneCanvas.getContext('2d');
     sceneCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
 
-    // 2. Alt Modul Tuvali: Labirent (PathDrops) - Tam Ekran
+    // 2. Alt Modul Tuvali: Labirent (PathDrops) - Tek RAF Entegrasyonu
     const mazeCanvas = document.createElement('canvas');
     mazeCanvas.width = width * DPR;
     mazeCanvas.height = height * DPR;
     mazeCanvas.style.width = width + 'px';
     mazeCanvas.style.height = height + 'px';
-    const destroyMaze = initPathDrops(mazeCanvas);
+    const mazeCtrl = initPathDrops(mazeCanvas, false);
 
-    // 3. Alt Modul Tuvali: SWITCH Kutusu Arka Plan Matrix Akisi (CultStream)
+    // 3. Alt Modul Tuvali: SWITCH Kutusu Arka Plan Matrix Akisi (CultStream) - Tek RAF Entegrasyonu
     const matrixCanvas = document.createElement('canvas');
-    let destroyMatrix = null;
+    let matrixCtrl = null;
     function setupMatrix(mw, mh) {
-      if (destroyMatrix) destroyMatrix();
+      if (matrixCtrl && matrixCtrl.destroy) matrixCtrl.destroy();
       matrixCanvas.width = Math.max(10, mw) * DPR;
       matrixCanvas.height = Math.max(10, mh) * DPR;
       matrixCanvas.style.width = Math.max(10, mw) + 'px';
       matrixCanvas.style.height = Math.max(10, mh) + 'px';
-      destroyMatrix = initCultStream(matrixCanvas, 'back');
+      matrixCtrl = initCultStream(matrixCanvas, 'back', false);
     }
 
     // Vitruvian V1 Optik Efektli Cizim
@@ -53,6 +53,16 @@ export default function CRTTerminal() {
 
     const zineTextureImg = new Image();
     zineTextureImg.src = '/switch-zine-texture.png';
+    let cachedZinePattern = null;
+
+    function bakeZinePattern() {
+      if (!zineTextureImg.complete || zineTextureImg.naturalWidth === 0) return;
+      try {
+        cachedZinePattern = sceneCtx.createPattern(zineTextureImg, 'repeat');
+      } catch (e) {}
+    }
+    zineTextureImg.onload = bakeZinePattern;
+    if (zineTextureImg.complete && zineTextureImg.naturalWidth > 0) bakeZinePattern();
 
     if (document.fonts) {
       document.fonts.load('64px "VCR OSD Mono"');
@@ -111,6 +121,24 @@ export default function CRTTerminal() {
       cachedRightBracketsCanvas = c;
     }
 
+    // 2.5 Sol SWITCH Kutusu Neon Braketler Canvas (Tek seferlik cizim)
+    let cachedSwitchBracketsCanvas = null;
+    function bakeSwitchBrackets(rw, rh) {
+      if (rw <= 20 || rh <= 20) return;
+      const pad = 8;
+      const c = document.createElement('canvas');
+      c.width = rw + pad * 2;
+      c.height = rh + pad * 2;
+      const cCtx = c.getContext('2d');
+      drawNeonBrackets(cCtx, pad, pad, rw, rh, 22, 3);
+      cachedSwitchBracketsCanvas = c;
+    }
+
+    // 2.6 Onbellekli Gradient Nesneleri (Resize sirasinda guncellenir)
+    let cachedVigGrad = null;
+    let cachedSpecGrad = null;
+    let cachedRimGrad = null;
+
     // 3. Ayrik Kod Terminal Tuvali (Event-Driven Text Buffer)
     const terminalCanvas = document.createElement('canvas');
     const terminalCtx = terminalCanvas.getContext('2d');
@@ -161,16 +189,35 @@ export default function CRTTerminal() {
       mazeCanvas.height = height * DPR;
       mazeCanvas.style.width = width + 'px';
       mazeCanvas.style.height = height + 'px';
+      if (mazeCtrl && mazeCtrl.resize) mazeCtrl.resize();
 
       const pX = 18, pY = 16;
       const bBoxH = height - pY * 2;
       const bBoxW = bBoxH;
       const bBoxX = width - pX - bBoxW;
+      const bBoxY = pY;
       const bRectW = Math.max(50, (bBoxX - pX) - pX);
       const bRectH = Math.min(135, Math.max(88, Math.round(bBoxH * 0.18)));
 
       setupMatrix(bRectW, bRectH);
       bakeRightBrackets(bBoxW, bBoxH);
+      bakeSwitchBrackets(bRectW, bRectH);
+
+      // Statik Gradient'lari Yalnizca Resize'da Hesapla
+      cachedVigGrad = sceneCtx.createRadialGradient(
+        bBoxX + bBoxW / 2, bBoxY + bBoxH / 2, bBoxH * 0.2,
+        bBoxX + bBoxW / 2, bBoxY + bBoxH / 2, bBoxH * 0.72
+      );
+      cachedVigGrad.addColorStop(0, 'rgba(0, 0, 0, 0.05)');
+      cachedVigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.72)');
+
+      cachedSpecGrad = sceneCtx.createLinearGradient(bBoxX, bBoxY, bBoxX, bBoxY + 28);
+      cachedSpecGrad.addColorStop(0, 'rgba(0, 240, 255, 0.14)');
+      cachedSpecGrad.addColorStop(1, 'rgba(0, 240, 255, 0)');
+
+      cachedRimGrad = sceneCtx.createLinearGradient(bBoxX, bBoxY + bBoxH - 24, bBoxX, bBoxY + bBoxH);
+      cachedRimGrad.addColorStop(0, 'rgba(0, 240, 255, 0)');
+      cachedRimGrad.addColorStop(1, 'rgba(0, 240, 255, 0.08)');
 
       const tW = Math.max(10, bBoxW - 32);
       const tH = Math.max(10, bBoxH - 36);
@@ -187,6 +234,8 @@ export default function CRTTerminal() {
 
     const typeState = {
       isTiradeActive: false,
+      cachedTiradeItems: null,
+      cachedTiradeLines: null,
       eventIdx: 0,
       lineIdx: 0,
       charIdx: 0,
@@ -205,14 +254,30 @@ export default function CRTTerminal() {
         typeState.isTiradeActive = true;
         typeState.eventsSinceTirade = 0;
         typeState.nextTiradeThreshold = 12 + Math.floor(Math.random() * 10);
+        typeState.cachedTiradeItems = buildFullPepsiMeltdown("ozgur");
+        typeState.cachedTiradeLines = typeState.cachedTiradeItems.map(d => d.text);
       } else {
         typeState.eventIdx = (typeState.eventIdx + 1) % REGULAR_EVENTS.length;
       }
     }
 
-    function renderLoop() {
-      const now = performance.now();
+    let lastFrameTime = performance.now();
+
+    function renderLoop(timestamp) {
+      const now = timestamp || performance.now();
+      const dt = Math.min((now - lastFrameTime) / 1000, 0.05);
+      lastFrameTime = now;
       frameCounter++;
+
+      // A. SENKRONIZE SIMULASYON VE ALT TUVAL CIZIMI (Tek RAF Orkestratoru)
+      if (mazeCtrl && mazeCtrl.update) {
+        mazeCtrl.update(dt);
+        mazeCtrl.draw();
+      }
+      if (matrixCtrl && matrixCtrl.update) {
+        matrixCtrl.update(dt);
+        matrixCtrl.draw();
+      }
 
       // Dinamik Kod, Hata ve Burst Akis Guncellemesi
       const uName = "ozgur";
@@ -221,8 +286,12 @@ export default function CRTTerminal() {
       let tiradeItems = null;
 
       if (typeState.isTiradeActive) {
-        tiradeItems = buildFullPepsiMeltdown(uName);
-        currentLines = tiradeItems.map(d => d.text);
+        if (!typeState.cachedTiradeItems) {
+          typeState.cachedTiradeItems = buildFullPepsiMeltdown(uName);
+          typeState.cachedTiradeLines = typeState.cachedTiradeItems.map(d => d.text);
+        }
+        tiradeItems = typeState.cachedTiradeItems;
+        currentLines = typeState.cachedTiradeLines;
         currentEvt = { mode: 'tirade' };
       } else {
         currentEvt = REGULAR_EVENTS[typeState.eventIdx];
@@ -247,6 +316,8 @@ export default function CRTTerminal() {
               typeState.lineIdx = 0;
               typeState.charIdx = 0;
               typeState.isTiradeActive = false;
+              typeState.cachedTiradeItems = null;
+              typeState.cachedTiradeLines = null;
               typeState.pauseUntil = now + 900;
               typeState.eventIdx = (typeState.eventIdx + 1) % REGULAR_EVENTS.length;
             } else {
@@ -364,15 +435,12 @@ export default function CRTTerminal() {
         }
 
         // 3. Yari saydam zine dokusu (vintage kagit greni)
-        if (zineTextureImg.complete && zineTextureImg.naturalWidth > 0) {
+        if (cachedZinePattern) {
           try {
             sceneCtx.save();
             sceneCtx.globalAlpha = 0.24;
-            const pat = sceneCtx.createPattern(zineTextureImg, 'repeat');
-            if (pat) {
-              sceneCtx.fillStyle = pat;
-              sceneCtx.fillRect(rectX, rectY, rectW, rectH);
-            }
+            sceneCtx.fillStyle = cachedZinePattern;
+            sceneCtx.fillRect(rectX, rectY, rectW, rectH);
             sceneCtx.restore();
           } catch (e) {}
         }
@@ -391,8 +459,12 @@ export default function CRTTerminal() {
         sceneCtx.shadowBlur = 12;
         sceneCtx.fillText('SWITCH', rectX + rectW / 2, rectY + rectH / 2);
 
-        // 6. Kose kirmizi neon braketler
-        drawNeonBrackets(sceneCtx, rectX, rectY, rectW, rectH, 22, 3);
+        // 6. Kose kirmizi neon braketler (Onbellekli Tuval)
+        if (cachedSwitchBracketsCanvas) {
+          sceneCtx.drawImage(cachedSwitchBracketsCanvas, rectX - 8, rectY - 8);
+        } else {
+          drawNeonBrackets(sceneCtx, rectX, rectY, rectW, rectH, 22, 3);
+        }
         sceneCtx.restore();
       }
 
@@ -419,31 +491,25 @@ export default function CRTTerminal() {
           sceneCtx.restore();
         } catch (e) {}
 
-        // 2. YARI SAYDAM FUME CAM TINT & VIGNETTE
+        // 2. YARI SAYDAM FUME CAM TINT & VIGNETTE (Onbellekli Gradientler)
         sceneCtx.fillStyle = 'rgba(2, 6, 12, 0.58)';
         sceneCtx.fillRect(boxX, boxY, boxW, boxH);
 
-        const vigGrad = sceneCtx.createRadialGradient(
-          boxX + boxW / 2, boxY + boxH / 2, boxH * 0.2,
-          boxX + boxW / 2, boxY + boxH / 2, boxH * 0.72
-        );
-        vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0.05)');
-        vigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.72)');
-        sceneCtx.fillStyle = vigGrad;
-        sceneCtx.fillRect(boxX, boxY, boxW, boxH);
+        if (cachedVigGrad) {
+          sceneCtx.fillStyle = cachedVigGrad;
+          sceneCtx.fillRect(boxX, boxY, boxW, boxH);
+        }
 
         // Kenar parlamalari
-        const specGrad = sceneCtx.createLinearGradient(boxX, boxY, boxX, boxY + 28);
-        specGrad.addColorStop(0, 'rgba(0, 240, 255, 0.14)');
-        specGrad.addColorStop(1, 'rgba(0, 240, 255, 0)');
-        sceneCtx.fillStyle = specGrad;
-        sceneCtx.fillRect(boxX, boxY, boxW, 28);
+        if (cachedSpecGrad) {
+          sceneCtx.fillStyle = cachedSpecGrad;
+          sceneCtx.fillRect(boxX, boxY, boxW, 28);
+        }
 
-        const rimGrad = sceneCtx.createLinearGradient(boxX, boxY + boxH - 24, boxX, boxY + boxH);
-        rimGrad.addColorStop(0, 'rgba(0, 240, 255, 0)');
-        rimGrad.addColorStop(1, 'rgba(0, 240, 255, 0.08)');
-        sceneCtx.fillStyle = rimGrad;
-        sceneCtx.fillRect(boxX, boxY + boxH - 24, boxW, 24);
+        if (cachedRimGrad) {
+          sceneCtx.fillStyle = cachedRimGrad;
+          sceneCtx.fillRect(boxX, boxY + boxH - 24, boxW, 24);
+        }
 
         // 3. JAVASCRIPT TYPEWRITER & BURST KOD TERMINALI (Event-Driven Offscreen Buffer)
         const termPadX = 16;
@@ -461,32 +527,36 @@ export default function CRTTerminal() {
           terminalDirty = true;
         }
 
-        const linesToRender = [...typeState.completedLines];
-        if (typeState.lineIdx < currentLines.length) {
-          const fullLine = currentLines[typeState.lineIdx];
-          if (currentEvt.mode === 'type' || currentEvt.mode === 'tirade') {
-            linesToRender.push(fullLine.slice(0, typeState.charIdx));
-          } else if (currentEvt.mode === 'scramble') {
-            let scrambledTail = '';
-            const remaining = fullLine.length - typeState.charIdx;
-            const scrambleCount = Math.min(remaining, 6);
-            for (let s = 0; s < scrambleCount; s++) {
-              scrambledTail += SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
-            }
-            linesToRender.push(fullLine.slice(0, typeState.charIdx) + scrambledTail);
-          }
-        }
-
-        const startIdx = Math.max(0, linesToRender.length - maxVisible);
-        const visibleLines = linesToRender.slice(startIdx);
-
         if (terminalDirty) {
           terminalCtx.clearRect(0, 0, termW, termH);
-          visibleLines.forEach((text, li) => {
-            const lY = li * lineH + 10;
-            const isCurrent = (li === visibleLines.length - 1 && (currentEvt.mode === 'type' || currentEvt.mode === 'scramble' || currentEvt.mode === 'tirade'));
-            renderCodeLine(terminalCtx, text, 0, lY, isCurrent, now, termW);
-          });
+
+          const compCount = typeState.completedLines.length;
+          const hasActiveTyping = (typeState.lineIdx < currentLines.length);
+          const totalLineCount = compCount + (hasActiveTyping ? 1 : 0);
+          const startIdx = Math.max(0, totalLineCount - maxVisible);
+
+          let displayLineIdx = 0;
+          for (let i = startIdx; i < totalLineCount; i++) {
+            const lY = displayLineIdx * lineH + 10;
+            if (i < compCount) {
+              renderCodeLine(terminalCtx, typeState.completedLines[i], 0, lY, false, now, termW);
+            } else {
+              const fullLine = currentLines[typeState.lineIdx] || '';
+              let activeText = fullLine.slice(0, typeState.charIdx);
+              if (currentEvt.mode === 'scramble') {
+                const remaining = fullLine.length - typeState.charIdx;
+                const scrambleCount = Math.min(remaining, 6);
+                let scrambledTail = '';
+                for (let s = 0; s < scrambleCount; s++) {
+                  scrambledTail += SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+                }
+                activeText += scrambledTail;
+              }
+              const isCurrent = (currentEvt.mode === 'type' || currentEvt.mode === 'scramble' || currentEvt.mode === 'tirade');
+              renderCodeLine(terminalCtx, activeText, 0, lY, isCurrent, now, termW);
+            }
+            displayLineIdx++;
+          }
           terminalDirty = false;
         }
 
@@ -568,13 +638,38 @@ export default function CRTTerminal() {
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', handleResize);
-      if (destroyMaze) destroyMaze();
-      if (destroyMatrix) destroyMatrix();
-      renderer.dispose();
+      if (mazeCtrl && mazeCtrl.destroy) mazeCtrl.destroy();
+      if (matrixCtrl && matrixCtrl.destroy) matrixCtrl.destroy();
+
+      // Three.js eksiksiz VRAM ve nesne temizligi
+      scene.remove(quad);
+      if (quad.geometry) quad.geometry.dispose();
       material.dispose();
+      canvasTexture.dispose();
+      renderer.dispose();
       if (renderer.domElement && renderer.domElement.parentNode) {
         renderer.domElement.parentNode.removeChild(renderer.domElement);
       }
+
+      // Event & Image referanslarini kes
+      vitruvianLedImg.onload = null;
+      zineTextureImg.onload = null;
+
+      // 2D Offscreen Canvas bitmap buffer'larini bellekten dusur
+      const zeroCanvas = (c) => {
+        if (!c) return;
+        c.width = 0;
+        c.height = 0;
+      };
+      zeroCanvas(sceneCanvas);
+      zeroCanvas(mazeCanvas);
+      zeroCanvas(matrixCanvas);
+      zeroCanvas(frostCanvas);
+      zeroCanvas(scanPatternCanvas);
+      zeroCanvas(terminalCanvas);
+      zeroCanvas(cachedVitruvianCanvas);
+      zeroCanvas(cachedRightBracketsCanvas);
+      zeroCanvas(cachedSwitchBracketsCanvas);
     };
   }, []);
 
