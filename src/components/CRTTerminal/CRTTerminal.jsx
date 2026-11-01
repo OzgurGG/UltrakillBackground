@@ -866,6 +866,33 @@ function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
   }
 }
 
+const V1_WINGS = [
+  // 0: Top Left (TL)
+  { id: 'TL', pts: [ [325, 135], [270, 185], [410, 345], [465, 300] ] },
+  // 1: Middle Left (ML)
+  { id: 'ML', pts: [ [185, 465], [205, 435], [430, 410], [430, 455], [205, 485] ] },
+  // 2: Bottom Left (BL)
+  { id: 'BL', pts: [ [265, 585], [300, 560], [440, 465], [415, 505], [275, 615] ] },
+  // 3: Top Right (TR)
+  { id: 'TR', pts: [ [755, 135], [810, 185], [670, 345], [615, 300] ] },
+  // 4: Middle Right (MR)
+  { id: 'MR', pts: [ [895, 465], [875, 435], [650, 410], [650, 455], [875, 485] ] },
+  // 5: Bottom Right (BR)
+  { id: 'BR', pts: [ [815, 585], [780, 560], [640, 465], [665, 505], [805, 615] ] }
+];
+
+function isPointInPoly(pt, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], yi = poly[i][1];
+    const xj = poly[j][0], yj = poly[j][1];
+    const intersect = ((yi > pt[1]) !== (yj > pt[1])) &&
+      (pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
 function drawNeonBrackets(ctx, x, y, w, h, bLen = 34, bThick = 4) {
   const arm = Math.min(bLen, Math.floor(h * 0.35), Math.floor(w * 0.35));
   
@@ -990,6 +1017,19 @@ export default function CRTTerminal() {
     // Vitruvian V1 Optik Efektli Çizim (Chromatic Aberration + Multi-Bloom + Aperture Grille)
     const vitruvianLedImg = new Image();
     vitruvianLedImg.src = '/vitruvian-v1-led-cyan.png';
+
+    const vitruvianRedImg = new Image();
+    vitruvianRedImg.src = '/vitruvian-v1-led-red.png';
+
+    // Fare pozisyonunu takip et (Kanat hover tespiti için)
+    const mousePosRef = { x: -9999, y: -9999 };
+    const handleMouseMove = (e) => {
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      mousePosRef.x = e.clientX - rect.left;
+      mousePosRef.y = e.clientY - rect.top;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
 
     const zineTextureImg = new Image();
     zineTextureImg.src = '/switch-zine-texture.png';
@@ -1521,6 +1561,24 @@ export default function CRTTerminal() {
         const vY = Math.round(boxY - vSize * (32 / 1080));
         const vX = Math.round(boxX + boxW - vSize * (1036 / 1080));
 
+        // Fare ile 6 kanadın hover tespiti
+        let hoveredWing = -1;
+        if (vSize > 0) {
+          const imgX = ((mousePosRef.x - vX) / vSize) * 1080;
+          const imgY = ((mousePosRef.y - vY) / vSize) * 1080;
+          if (imgX >= 0 && imgX <= 1080 && imgY >= 0 && imgY <= 1080) {
+            for (let w = 0; w < V1_WINGS.length; w++) {
+              if (isPointInPoly([imgX, imgY], V1_WINGS[w].pts)) {
+                hoveredWing = w;
+                break;
+              }
+            }
+          }
+        }
+
+        container.style.cursor = hoveredWing !== -1 ? 'crosshair' : 'default';
+
+        // 4.1 Taban Çizim: Tüm karakter ve kanatlar CYAN neon olarak ışıldar
         if (vitruvianLedImg.complete && vitruvianLedImg.naturalWidth > 0) {
           sceneCtx.save();
           sceneCtx.shadowColor = 'rgba(0, 240, 255, 0.85)';
@@ -1531,6 +1589,39 @@ export default function CRTTerminal() {
           sceneCtx.shadowColor = 'rgba(255, 255, 255, 0.95)';
           sceneCtx.shadowBlur = 6;
           sceneCtx.drawImage(vitruvianLedImg, vX, vY, vSize, vSize);
+          sceneCtx.restore();
+        }
+
+        // 4.2 Farenin Üzerinde Olduğu Kanat: SADECE O KANAT KIRMIZI NEON OLUR
+        // Kullanıcı isteği: "faremle kanatlarının üstüne geldiğimde kanadın rengi sadece kırmızı olacak. 6 kanat var ve her birinin üstünde geldiğimde sadece kırmızı olmasını istiyorum başka bişey değil."
+        if (hoveredWing !== -1 && vitruvianRedImg.complete && vitruvianRedImg.naturalWidth > 0) {
+          sceneCtx.save();
+          sceneCtx.beginPath();
+          const poly = V1_WINGS[hoveredWing].pts;
+          poly.forEach(([px, py], idx) => {
+            const sx = vX + (px / 1080) * vSize;
+            const sy = vY + (py / 1080) * vSize;
+            if (idx === 0) sceneCtx.moveTo(sx, sy);
+            else sceneCtx.lineTo(sx, sy);
+          });
+          sceneCtx.closePath();
+          sceneCtx.clip();
+
+          // Kanat altındaki cyan neon parıltıyı maskele
+          sceneCtx.globalCompositeOperation = 'source-over';
+          sceneCtx.fillStyle = 'rgba(2, 6, 12, 0.94)';
+          sceneCtx.fill();
+
+          // Sadece o kanadı kırmızı LED neon olarak parlat
+          sceneCtx.shadowColor = 'rgba(255, 34, 34, 0.95)';
+          sceneCtx.shadowBlur = 20;
+          sceneCtx.globalCompositeOperation = 'screen';
+          sceneCtx.drawImage(vitruvianRedImg, vX, vY, vSize, vSize);
+
+          sceneCtx.shadowColor = 'rgba(255, 255, 255, 0.95)';
+          sceneCtx.shadowBlur = 6;
+          sceneCtx.drawImage(vitruvianRedImg, vX, vY, vSize, vSize);
+
           sceneCtx.restore();
         }
 
@@ -1555,6 +1646,7 @@ export default function CRTTerminal() {
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('mousemove', handleMouseMove);
       if (destroyMaze) destroyMaze();
       if (destroyMatrix) destroyMatrix();
       renderer.dispose();
