@@ -100,10 +100,39 @@ const PEPSI_DIALOGUE_SRC = [
   { type: "narrate", msg: "just one Pepsi.", delay: 400 },
 ];
 
-function buildPepsiDialogue(username) {
+// Tirad Sonrası Zıvanadan Çıkan Çılgın Hata Fırtınası (Apocalyptic Meltdown Storm)
+const PEPSI_MELTDOWN_SRC = [
+  { type: "error", msg: "█ FATAL_EXCEPTION: SANITY_CHECK_FAILED (0x0000DEAD) █", delay: 90 },
+  { type: "error", msg: "Uncaught RealityMismatchError: User requested PEPSI. Machine cannot dispense beverage.", delay: 70 },
+  { type: "stack", msg: "  at evaluateHumanCondition (kernel/psyche.rs:404:12)", delay: 30 },
+  { type: "stack", msg: "  at recursiveParanoiaLoop (v1/allocator.ts:666:9)", delay: 30 },
+  { type: "stack", msg: "  at processTicksAndRejections (task_queues:95:5)", delay: 30 },
+  { type: "panic", msg: "💥 [FATAL] KERNEL INTEGRITY BREACHED: SIGNAL 11 (SIGSEGV)", delay: 60 },
+  { type: "panic", msg: "💥 SENSORY_OVERFLOW DETECTED ON NODE 0xFA (ALL CORES PINNED 100%)", delay: 50 },
+  { type: "panic", msg: "💥 VIRTUAL_MEMORY_PANIC: PAGE_FAULT_IN_NONPAGED_AREA", delay: 50 },
+  { type: "hex",   msg: "0xDEAD00:  FF FF FF FF  00 00 00 00  DE AD BE EF  7F FF FF FF  |????????........|", delay: 40 },
+  { type: "hex",   msg: "0xDEAD10:  50 45 50 53  49 20 4E 4F  54 20 46 4F  55 4E 44 21  |PEPSI NOT FOUND!|", delay: 40 },
+  { type: "hex",   msg: "0xDEAD20:  21 21 21 21  21 21 21 21  21 21 21 21  21 21 21 21  |!!!!!!!!!!!!!!!!|", delay: 40 },
+  { type: "error", msg: "█ EMERGENCY COREDUMP: REGISTER TRACE █", delay: 50 },
+  { type: "trace", msg: "RAX: 0x0000000000000000  RBX: 0xDEADBEEFCAFE0001", delay: 25 },
+  { type: "trace", msg: "RCX: 0xFFFFFFFFFFFFFFFF  RDX: 0x00007FFFFFFFFFFF", delay: 25 },
+  { type: "trace", msg: "RSI: 0x0000000000000042  RDI: 0x00000000PEPSI000", delay: 25 },
+  { type: "trace", msg: "RIP: 0x0000000000401337  RFL: 0x0000000000010286", delay: 25 },
+  { type: "panic", msg: "🔥 WATCHDOG TIMEOUT: BUS CONTROLLER LOCKUP DETECTED", delay: 40 },
+  { type: "panic", msg: "🔥 CORE OVERVOLTAGE TRIP: 2.18V (LIMIT: 1.25V)", delay: 40 },
+  { type: "panic", msg: "🔥 THERMAL RUNAWAY: SENSOR T_JUNCTION @ 108.4°C [CRITICAL]", delay: 40 },
+  { type: "panic", msg: "🔥 HARDWARE EXCEPTION: CORRUPTING SECTOR MAP...", delay: 40 },
+  { type: "error", msg: "█ SYSTEM IN COMA: ESCALATING PRIVILEGE ESCAPE DETECTED █", delay: 70 },
+  { type: "error", msg: "KERNEL PANIC: ATTEMPTED TO KILL INIT! exitcode=0x0000000b", delay: 60 },
+  { type: "error", msg: "HALTING ALL THREADS... [HARD RESET TRIGGERED]", delay: 70 },
+  { type: "reset", msg: "█ SYSTEM HALTED: CLEARING DISPLAY BUFFER AND REBOOTING... █", delay: 1400 },
+];
+
+function buildFullPepsiMeltdown(username) {
   const u = username || "ozgur";
   const U = u.toUpperCase();
-  return PEPSI_DIALOGUE_SRC.map((item) => {
+
+  const dialogue = PEPSI_DIALOGUE_SRC.map((item) => {
     let raw = item.msg.replace(/\{user\}/g, u).replace(/\{USER\}/g, U);
     let line = raw;
     if (item.type === 'narrate') {
@@ -119,13 +148,22 @@ function buildPepsiDialogue(username) {
     }
     return {
       text: line,
-      delay: item.delay
+      delay: item.delay,
+      isMeltdown: false
     };
   });
+
+  const meltdown = PEPSI_MELTDOWN_SRC.map((item) => ({
+    text: item.msg,
+    delay: item.delay,
+    isMeltdown: true
+  }));
+
+  return [...dialogue, ...meltdown];
 }
 
-// Onlarca Farklı Teknik ve Karışık Akış: Gerçek JS, Hex Dökümleri, Hatalar, Git Diffleri, Gauges, Şemalar, Disasm, Bitstream, Audio DSP, Telemetri
-const SCRIPT_EVENTS = [
+// Standart Kod Akış Olayları (Loading barlar kaldırıldı; temiz telemetri ve kod blokları)
+const REGULAR_EVENTS = [
   // 1. Teknik: Gerçek JavaScript Fonksiyonu (Nizamî Tab Girintili)
   {
     mode: 'type',
@@ -152,11 +190,6 @@ const SCRIPT_EVENTS = [
       "};"
     ]
   },
-  // 2. Teknik: İkonik Pepsi & Sistem Monoloğu / Diyaloğu (Narrative Soliloquy)
-  {
-    mode: 'dialogue',
-    getLines: (uName) => buildPepsiDialogue(uName)
-  },
   // 2. Teknik: Canlı Hexadecimal Bellek Dökümü (Binary Memory Inspector)
   {
     mode: 'burst',
@@ -181,13 +214,13 @@ const SCRIPT_EVENTS = [
       "✓ [RECOVERY] Sandbox isolated. Core dumped to /tmp/core.941"
     ]
   },
-  // 4. Teknik: İlerleme Göstergeleri ve ASCII Sparklines
+  // 4. Teknik: Sistem Performans Metrikleri & ASCII Sparklines (Loading barları kaldırıldı)
   {
     mode: 'burst',
     lines: [
-      "COMPILE [████████████████░░░░] 80% (32/40 modules)",
-      "HEAP    [▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░] 52.4MB / 128MB  GC: 0.4ms",
-      "BUFFERS [■■■■■■■■■■■■■■■■■■■□] 95% [STABLE] 60 FPS",
+      "METRICS: 32/40 modules compiled in 142ms",
+      "HEAP_UTIL: 52.4MB / 128MB │ GC_CYCLE: 0.42ms",
+      "BUFFER_POOLS: 16 active buffers │ 60 FPS STABLE",
       "RECOIL  ∿∿∿∿∿  ▂▃▅▆▇ [DAMPENED]  THRUST: 4,400 N",
       "IOPS: 14,200/s │ Latency: 0.18ms │ DropRate: 0.00%"
     ]
@@ -243,7 +276,7 @@ const SCRIPT_EVENTS = [
       "│ CORE TEMP: 48.2°C  [NOMINAL] ∿∿∿∿∿   │",
       "│ VCORE:     1.182V  [STABLE]          │",
       "│ CLOCK:     4.82GHz [BOOST]           │",
-      "│ GPU LOAD:  [████████████░░░░] 74%    │",
+      "│ GPU LOAD:  74.2%  [PERF_MODE]       │",
       "│ VRAM:      6,144MB / 8,192MB         │",
       "│ JET_FAN:   4,200 RPM [SILENT]        │",
       "└──────────────────────────────────────┘"
@@ -411,7 +444,7 @@ const SCRIPT_EVENTS = [
       "  at HTMLCanvasElement.renderLoop (CRTTerminal.jsx:920:9)",
       "⚡ [SWEEP] Forcing generational garbage collection...",
       "⚡ [RECLAIM] 142.8 MB freed across 3 heap segments.",
-      "✓ Memory pressure resolved: [████░░░░░░░░░░░░] 22% used"
+      "✓ Memory pressure resolved: 22% heap allocated (32.4MB)"
     ]
   },
   // 20. Teknik: Test Paketi Çıktısı
@@ -494,7 +527,14 @@ function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
       bg = '#ffaa00'; fg = '#000000';
     } else if (trimmed.includes('SECURE') || trimmed.includes('TARGET') || trimmed.includes('V1')) {
       bg = '#00f0ff'; fg = '#000000';
-    } else if (trimmed.includes('PANIC') || trimmed.includes('FATAL') || trimmed.includes('OOM')) {
+    } else if (
+      trimmed.includes('PANIC') ||
+      trimmed.includes('FATAL') ||
+      trimmed.includes('OOM') ||
+      trimmed.includes('COREDUMP') ||
+      trimmed.includes('HALTED') ||
+      trimmed.includes('SANITY')
+    ) {
       bg = '#ff1122'; fg = '#ffffff';
     }
 
@@ -505,7 +545,7 @@ function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
     return;
   }
 
-  // 2. HATA SATIRLARI (Uncaught, TypeError, SyntaxError, RangeError, FATAL, [PANIC])
+  // 2. HATA VE ÇÖKÜŞ SATIRLARI (Uncaught, TypeError, SyntaxError, RangeError, FATAL, [PANIC], 💥, 🔥)
   if (
     trimmed.startsWith('Uncaught') ||
     trimmed.startsWith('TypeError') ||
@@ -514,16 +554,27 @@ function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
     trimmed.startsWith('Error:') ||
     trimmed.startsWith('FATAL:') ||
     trimmed.startsWith('[FATAL]') ||
-    trimmed.startsWith('[PANIC]')
+    trimmed.startsWith('[PANIC]') ||
+    trimmed.startsWith('💥') ||
+    trimmed.startsWith('🔥') ||
+    trimmed.startsWith('KERNEL PANIC:')
   ) {
-    // CRT Glitch titremesi (Kritik hata anında 1-2px yatay jitter)
-    const jitter = Math.sin(now * 0.08) > 0.65 ? 2.5 : 0;
+    // CRT Glitch titremesi (Kritik hata anında 1-3px yatay jitter)
+    const jitter = Math.sin(now * 0.08) > 0.6 ? 2.5 : 0;
     ctx.fillStyle = '#ff2233';
     ctx.font = 'bold 11px "Share Tech Mono", monospace';
-    ctx.shadowColor = 'rgba(255, 34, 51, 0.7)';
+    ctx.shadowColor = 'rgba(255, 34, 51, 0.75)';
     ctx.shadowBlur = 6;
     ctx.fillText(text, x + jitter, y);
     ctx.shadowBlur = 0;
+    return;
+  }
+
+  // 2.5 REGİSTER TRACE SATIRLARI (RAX:, RCX:, CR0:)
+  if (trimmed.startsWith('RAX:') || trimmed.startsWith('RCX:') || trimmed.startsWith('RSI:') || trimmed.startsWith('RIP:') || trimmed.startsWith('CR0:')) {
+    ctx.font = '10px "Share Tech Mono", monospace';
+    ctx.fillStyle = 'rgba(255, 90, 100, 0.9)';
+    ctx.fillText(text, x, y);
     return;
   }
 
@@ -565,8 +616,8 @@ function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
     return;
   }
 
-  // 5. HEX MEMORY DUMP SATIRLARI (0x7FFF...)
-  if (trimmed.startsWith('0x7FFF')) {
+  // 5. HEX MEMORY DUMP SATIRLARI (0x7FFF... / 0xDEAD...)
+  if (trimmed.startsWith('0x7FFF') || trimmed.startsWith('0xDEAD')) {
     const pipeIdx = text.indexOf('|');
     const addrEnd = text.indexOf(':');
     ctx.font = '10px "Share Tech Mono", monospace';
@@ -575,7 +626,7 @@ function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
       const hexBytes = text.slice(addrEnd + 1, pipeIdx);
       const ascii = text.slice(pipeIdx);
 
-      ctx.fillStyle = '#00f0ff';
+      ctx.fillStyle = trimmed.startsWith('0xDEAD') ? '#ff3344' : '#00f0ff';
       ctx.fillText(addr, x, y);
       const ax = x + ctx.measureText(addr + ' ').width;
 
@@ -583,7 +634,7 @@ function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
       ctx.fillText(hexBytes, ax, y);
       const hx = ax + ctx.measureText(hexBytes).width;
 
-      ctx.fillStyle = '#39ff14';
+      ctx.fillStyle = trimmed.includes('PEPSI') ? '#ff3344' : '#39ff14';
       ctx.fillText(ascii, hx, y);
       return;
     }
@@ -686,25 +737,11 @@ function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
     return;
   }
 
-  // 11. GÖSTERGE VE ASCII İLERLEME ÇUBUKLARI ([███, [▓▓▓, [■■■, ∿∿∿)
-  if (trimmed.includes('[██') || trimmed.includes('[▓▓') || trimmed.includes('[■■') || trimmed.includes('∿∿∿')) {
-    const parts = text.split(/(\[[█▓■░□]+\])/g);
-    let gx = x;
+  // 11. DALGA BİÇİMLERİ VE SPARKLINE (∿∿∿)
+  if (trimmed.includes('∿∿∿')) {
     ctx.font = '11px "Share Tech Mono", monospace';
-    parts.forEach((p) => {
-      if (p.startsWith('[')) {
-        ctx.fillStyle = '#39ff14';
-        ctx.font = 'bold 11px "Share Tech Mono", monospace';
-      } else if (p.includes('%') || p.includes('MB') || p.includes('FPS') || p.includes('4,400') || p.includes('RPM')) {
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '11px "Share Tech Mono", monospace';
-      } else {
-        ctx.fillStyle = '#00f0ff';
-        ctx.font = 'bold 11px "Share Tech Mono", monospace';
-      }
-      ctx.fillText(p, gx, y);
-      gx += ctx.measureText(p).width;
-    });
+    ctx.fillStyle = '#00f0ff';
+    ctx.fillText(text, x, y);
     return;
   }
 
@@ -714,10 +751,7 @@ function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
     const parts = text.split(/(\[[^\]]+\])/g);
     let bx = x;
     parts.forEach((p) => {
-      if (p.startsWith('[') && (p.includes('█') || p.includes('▓') || p.includes('■') || p.includes('░'))) {
-        ctx.fillStyle = '#39ff14';
-        ctx.font = 'bold 11px "Share Tech Mono", monospace';
-      } else if (p.startsWith('[')) {
+      if (p.startsWith('[')) {
         ctx.fillStyle = (p.includes('ERR') || p.includes('CRIT'))
           ? '#ff3344'
           : (p.includes('LINK') || p.includes('COMP') || p.includes('OPT') || p.includes('NOM') || p.includes('STABLE') || p.includes('SILENT') || p.includes('BOOST')
@@ -956,14 +990,33 @@ export default function CRTTerminal() {
     // 5. Ana Çizim & Bükme Döngüsü (60 FPS)
     let rafId;
 
-    // Dinamik Kod & Hata Motor Durumu
+    // Dinamik Kod, Tirad & Hata Motor Durumu
     const typeState = {
+      isTiradeActive: false,
       eventIdx: 0,
       lineIdx: 0,
       charIdx: 0,
       completedLines: [],
-      pauseUntil: 0
+      pauseUntil: 0,
+      eventsSinceTirade: 0,
+      // Tirad nadir çıksın: 10 ile 18 normal kod olayı geçtikten sonra tetiklenir
+      nextTiradeThreshold: 10 + Math.floor(Math.random() * 8)
     };
+
+    function advanceNextEvent() {
+      typeState.lineIdx = 0;
+      typeState.charIdx = 0;
+      typeState.eventsSinceTirade++;
+
+      // Nadir tirad kontrolü: Yeterli sayıda normal kod aktıktan sonra rastgele tetiklenir
+      if (typeState.eventsSinceTirade >= typeState.nextTiradeThreshold) {
+        typeState.isTiradeActive = true;
+        typeState.eventsSinceTirade = 0;
+        typeState.nextTiradeThreshold = 12 + Math.floor(Math.random() * 10);
+      } else {
+        typeState.eventIdx = (typeState.eventIdx + 1) % REGULAR_EVENTS.length;
+      }
+    }
 
     function renderLoop() {
       const now = performance.now();
@@ -973,13 +1026,55 @@ export default function CRTTerminal() {
       }
 
       // Dinamik Kod, Hata ve Burst Akış Güncellemesi
-      const currentEvt = SCRIPT_EVENTS[typeState.eventIdx];
       const uName = profilRef.current?.username || "ozgur";
-      const dialogueItems = currentEvt.mode === 'dialogue' ? currentEvt.getLines(uName) : null;
-      const currentLines = dialogueItems ? dialogueItems.map(d => d.text) : currentEvt.lines;
+      let currentEvt;
+      let currentLines;
+      let tiradeItems = null;
+
+      if (typeState.isTiradeActive) {
+        tiradeItems = buildFullPepsiMeltdown(uName);
+        currentLines = tiradeItems.map(d => d.text);
+        currentEvt = { mode: 'tirade' };
+      } else {
+        currentEvt = REGULAR_EVENTS[typeState.eventIdx];
+        currentLines = currentEvt.lines;
+      }
 
       if (now >= typeState.pauseUntil) {
-        if (currentEvt.mode === 'burst') {
+        if (currentEvt.mode === 'tirade') {
+          // İKONİK TİRİAD + ZIVANADAN ÇIKAN HATA FIRTINASI
+          const item = tiradeItems[typeState.lineIdx] || { text: '', delay: 100, isMeltdown: false };
+          const currentLine = item.text;
+
+          // Hata fırtınası kısmında çok daha hızlı döküm (her karede 6 karakter)
+          const charSpeed = item.isMeltdown ? 6 : 3;
+          typeState.charIdx = Math.min(currentLine.length, typeState.charIdx + charSpeed);
+
+          if (typeState.charIdx >= currentLine.length) {
+            typeState.completedLines.push(currentLine);
+            typeState.lineIdx++;
+            typeState.charIdx = 0;
+
+            if (typeState.lineIdx >= tiradeItems.length) {
+              // BÜTÜN TİRİAD VE ÇILGIN HATA FIRTINASI BİTTİ!
+              // Kullanıcı isteği: "ardından clear atıp sıfırdan başlasın"
+              typeState.completedLines = []; // EKRANI TAMAMEN SIFIRLA / CLEAR!
+              typeState.lineIdx = 0;
+              typeState.charIdx = 0;
+              typeState.isTiradeActive = false;
+              typeState.pauseUntil = now + 900; // Reset sonrası 0.9s sessizlik
+              typeState.eventIdx = (typeState.eventIdx + 1) % REGULAR_EVENTS.length;
+            } else {
+              // Eğer son diyalog satırı bittiyse ("just one Pepsi."), zıvanadan çıkmadan önce 1.4s gergin sessizlik
+              const isPreMeltdown = (typeState.lineIdx === PEPSI_DIALOGUE_SRC.length);
+              if (isPreMeltdown) {
+                typeState.pauseUntil = now + 1400;
+              } else {
+                typeState.pauseUntil = now + (item.isMeltdown ? Math.max(25, item.delay) : Math.max(70, Math.min(600, item.delay * 2)));
+              }
+            }
+          }
+        } else if (currentEvt.mode === 'burst') {
           // BUNCH OF CODES: Bir anda 3-5 satır birden ekrana atılır!
           const burstSize = Math.min(currentLines.length - typeState.lineIdx, 3 + Math.floor(Math.random() * 2));
           for (let b = 0; b < burstSize; b++) {
@@ -988,9 +1083,7 @@ export default function CRTTerminal() {
           }
           if (typeState.lineIdx >= currentLines.length) {
             typeState.pauseUntil = now + 900;
-            typeState.lineIdx = 0;
-            typeState.charIdx = 0;
-            typeState.eventIdx = (typeState.eventIdx + 1) % SCRIPT_EVENTS.length;
+            advanceNextEvent();
           } else {
             typeState.pauseUntil = now + 40; // Çok hızlı peş peşe burst
           }
@@ -1001,15 +1094,12 @@ export default function CRTTerminal() {
           typeState.lineIdx++;
           if (typeState.lineIdx >= currentLines.length) {
             typeState.pauseUntil = now + 1600; // Hatanın ekranda okunabilmesi için 1.6s durakla
-            typeState.lineIdx = 0;
-            typeState.charIdx = 0;
-            typeState.eventIdx = (typeState.eventIdx + 1) % SCRIPT_EVENTS.length;
+            advanceNextEvent();
           } else {
             typeState.pauseUntil = now + 90; // Hata satırları hızlıca düşer
           }
         } else if (currentEvt.mode === 'scramble') {
           // SİBER ŞİFRE ÇÖZÜCÜ (SCRAMBLE DECRYPT) MODU:
-          // Her satır önce şifreli matris glifleri olarak belirir ve hızla karakter karakter çözülür
           const currentLine = currentLines[typeState.lineIdx] || '';
           if (typeState.charIdx === 0) {
             const firstNonSpace = currentLine.search(/\S|$/);
@@ -1023,31 +1113,9 @@ export default function CRTTerminal() {
             typeState.charIdx = 0;
             if (typeState.lineIdx >= currentLines.length) {
               typeState.pauseUntil = now + 1200;
-              typeState.lineIdx = 0;
-              typeState.eventIdx = (typeState.eventIdx + 1) % SCRIPT_EVENTS.length;
+              advanceNextEvent();
             } else {
               typeState.pauseUntil = now + 40;
-            }
-          }
-        } else if (currentEvt.mode === 'dialogue') {
-          // İKONİK DİYALOG & MONOLOG MODU: Karakter bazlı doğal daktilo ve ritmik duraklamalar
-          const item = dialogueItems[typeState.lineIdx] || { text: '', delay: 120 };
-          const currentLine = item.text;
-
-          typeState.charIdx = Math.min(currentLine.length, typeState.charIdx + 3);
-
-          if (typeState.charIdx >= currentLine.length) {
-            typeState.completedLines.push(currentLine);
-            typeState.lineIdx++;
-            typeState.charIdx = 0;
-
-            if (typeState.lineIdx >= dialogueItems.length) {
-              typeState.pauseUntil = now + 2800; // Monolog bitiminde 2.8s derin sessizlik
-              typeState.lineIdx = 0;
-              typeState.eventIdx = (typeState.eventIdx + 1) % SCRIPT_EVENTS.length;
-            } else {
-              // Dosyadaki delay değerine göre duygusal ve ritmik duraklama
-              typeState.pauseUntil = now + Math.max(70, Math.min(700, item.delay * 2));
             }
           }
         } else {
@@ -1069,16 +1137,15 @@ export default function CRTTerminal() {
 
             if (typeState.lineIdx >= currentLines.length) {
               typeState.pauseUntil = now + 1300;
-              typeState.lineIdx = 0;
-              typeState.eventIdx = (typeState.eventIdx + 1) % SCRIPT_EVENTS.length;
+              advanceNextEvent();
             } else {
               typeState.pauseUntil = now + 45;
             }
           }
         }
 
-        // Buffer sınırını koru
-        if (typeState.completedLines.length > 70) {
+        // Buffer sınırını koru (Tirad hata fırtınası sırasında sınırlandırma yapma, tüm patlama aksın)
+        if (typeState.completedLines.length > 70 && !typeState.isTiradeActive) {
           typeState.completedLines = typeState.completedLines.slice(-35);
         }
       }
@@ -1259,7 +1326,7 @@ export default function CRTTerminal() {
         const linesToRender = [...typeState.completedLines];
         if (typeState.lineIdx < currentLines.length) {
           const fullLine = currentLines[typeState.lineIdx];
-          if (currentEvt.mode === 'type' || currentEvt.mode === 'dialogue') {
+          if (currentEvt.mode === 'type' || currentEvt.mode === 'tirade') {
             linesToRender.push(fullLine.slice(0, typeState.charIdx));
           } else if (currentEvt.mode === 'scramble') {
             let scrambledTail = '';
@@ -1278,7 +1345,7 @@ export default function CRTTerminal() {
         sceneCtx.save();
         visibleLines.forEach((text, li) => {
           const lY = termY + li * lineH + 10;
-          const isCurrent = (li === visibleLines.length - 1 && (currentEvt.mode === 'type' || currentEvt.mode === 'scramble' || currentEvt.mode === 'dialogue'));
+          const isCurrent = (li === visibleLines.length - 1 && (currentEvt.mode === 'type' || currentEvt.mode === 'scramble' || currentEvt.mode === 'tirade'));
           renderCodeLine(sceneCtx, text, termX, lY, isCurrent, now, termW);
         });
         sceneCtx.restore();
