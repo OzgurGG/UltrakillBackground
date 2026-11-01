@@ -11,8 +11,19 @@ function getRandomChar() {
    return CHARS[Math.floor(Math.random() * CHARS.length)];
 }
 
-const CELL_W = 14;
-const CELL_H = 16;
+// Pre-rendered radial glow sprite for high performance particle blit
+const glowSprite = (typeof document !== 'undefined') ? (() => {
+   const c = document.createElement('canvas');
+   c.width = 32;
+   c.height = 32;
+   const gCtx = c.getContext('2d');
+   const grad = gCtx.createRadialGradient(16, 16, 0, 16, 16, 16);
+   grad.addColorStop(0, 'rgba(255, 45, 30, 0.45)');
+   grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+   gCtx.fillStyle = grad;
+   gCtx.fillRect(0, 0, 32, 32);
+   return c;
+})() : null;
 
 export function initCultStream(cvs, layer = 'back') {
    if (!cvs) return () => {};
@@ -185,16 +196,14 @@ export function initCultStream(cvs, layer = 'back') {
          }
       }
 
-      if (glowCells.length > 0) {
+      if (glowCells.length > 0 && glowSprite) {
          ctx.globalCompositeOperation = 'screen';
-         for (const g of glowCells) {
-            const rad = 15;
-            const gradient = ctx.createRadialGradient(g.px, g.py, 0, g.px, g.py, rad);
-            gradient.addColorStop(0, `rgba(255, 30, 20, ${g.intensity * 0.4})`);
-            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(g.px - rad, g.py - rad, rad * 2, rad * 2);
+         for (let i = 0; i < glowCells.length; i++) {
+            const g = glowCells[i];
+            ctx.globalAlpha = Math.min(1.0, g.intensity);
+            ctx.drawImage(glowSprite, g.px - 16, g.py - 16);
          }
+         ctx.globalAlpha = 1.0;
          ctx.globalCompositeOperation = 'source-over';
       }
 
