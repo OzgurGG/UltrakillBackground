@@ -112,3 +112,4 @@ export function extractLineArtToCanvas(imageElement, options = {}) {
 
   return outCanvas;
 }
+

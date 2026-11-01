@@ -136,9 +136,9 @@ export default function CRTTerminal() {
     avatarImg.crossOrigin = 'anonymous';
     avatarImg.src = profilRef.current.avatarUrl;
 
-    // Vitruvian V1 Çizimi (Şeffaf zemin, beyaz çizgili)
-    const vitruvianImg = new Image();
-    vitruvianImg.src = '/vitruvian-v1-white.png';
+    // Vitruvian V1 Optik Efektli Çizim (Chromatic Aberration + Multi-Bloom + Aperture Grille)
+    const vitruvianOpticImg = new Image();
+    vitruvianOpticImg.src = '/vitruvian-v1-optic.png';
 
     // 4. Three.js Sahnesi ve WebGL Renderer
     const scene = new THREE.Scene();
@@ -305,45 +305,90 @@ export default function CRTTerminal() {
       // C. BODY ALANI: PathDrops Labirenti (Tüm ekrana yayılır)
       sceneCtx.drawImage(mazeCanvas, 0, HEADER_HEIGHT, width, Math.max(10, height - HEADER_HEIGHT));
 
-      // D. VITRUVIAN V1 (Arka plansız, beyaz çizgiler & yumuşak diffuse ışık yayılımı)
-      if (vitruvianImg.complete && vitruvianImg.naturalWidth > 0) {
-        const bodyH = Math.max(10, height - HEADER_HEIGHT);
-        const vSize = Math.min(width * 0.70, bodyH * 0.86, 620);
-        const vX = (width - vSize) / 2;
-        const vY = HEADER_HEIGHT + (bodyH - vSize) / 2;
 
-        sceneCtx.save();
-        // Diffuse parıltısı: Fosforlu tüp camında yumuşak beyaz ışık yayılımı
-        sceneCtx.shadowColor = 'rgba(255, 255, 255, 0.45)';
-        sceneCtx.shadowBlur = 10;
-        sceneCtx.globalAlpha = 0.90;
-        sceneCtx.drawImage(vitruvianImg, vX, vY, vSize, vSize);
-        sceneCtx.restore();
-      }
+      // D. KÖŞEYE KARE PANEL (CYBERPUNK RETICLE CARD + OPTIK VITRUVIAN V1)
+      const cardSize = Math.min(350, Math.min(width - 48, height - HEADER_HEIGHT - 48));
+      if (cardSize > 140) {
+        const cardX = width - cardSize - 28;
+        const cardY = height - cardSize - 28;
 
-      // E. KÖŞEYE KARE PANEL (CYBERPUNK RETICLE CARD)
-      const cardSize = Math.min(300, Math.min(width - 48, height - HEADER_HEIGHT - 48));
-      if (cardSize > 120) {
-        const cardX = width - cardSize - 32;
-        const cardY = height - cardSize - 32;
-
-        // Panel Zemin (Yarı saydam saf siyah cam)
-        sceneCtx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+        // 1. Panel Zemin (Derin saf siyah cam zemin)
+        sceneCtx.fillStyle = 'rgba(2, 2, 2, 0.92)';
         sceneCtx.fillRect(cardX, cardY, cardSize, cardSize);
 
-        // Panel İnce Çerçeve
-        sceneCtx.strokeStyle = 'rgba(255, 34, 34, 0.22)';
+        // 2. Panel İnce HUD Çerçevesi
+        sceneCtx.strokeStyle = 'rgba(255, 34, 34, 0.25)';
         sceneCtx.lineWidth = 1;
         sceneCtx.strokeRect(cardX, cardY, cardSize, cardSize);
 
-        // 4 Köşe Keskin Kırmızı L-Braketleri (┌ ┐ └ ┘)
-        const bLen = 26; // Braket kol uzunluğu
-        const bThick = 3; // Braket et kalınlığı
+        // 3. Arka Plan Amber/Bakır Fosfor Kod Akışı (Referans görseldeki turuncu kodlar)
+        sceneCtx.save();
+        sceneCtx.beginPath();
+        sceneCtx.rect(cardX + 4, cardY + 4, cardSize - 8, cardSize - 8);
+        sceneCtx.clip();
+
+        sceneCtx.font = '10px "Share Tech Mono", monospace';
+        sceneCtx.fillStyle = 'rgba(235, 125, 45, 0.22)';
+        const codeSnippets = [
+          '0x7F40 :: LOAD_SEC_01 [V1_KERNEL]',
+          'TRACE.SYS.ACTIVE >> PROTO_ONLINE',
+          'MEMORY::ALLOC(0x3B82, 0x99A1)',
+          'HEURISTIC_MATRIX_RUNNER >> OK',
+          'FEED_SRC: ULTRAKILL_REMNANT',
+          'MACHINE_SIN :: SANCTUM_DENIED',
+          'SIGNAL.RX [48000 Hz, 32-BIT]',
+          'TARGET ACQUISITION: 100% LOCK',
+          'BLOOD_IS_FUEL :: HELL_IS_FULL'
+        ];
+        const lineSpacing = (cardSize - 36) / codeSnippets.length;
+        for (let i = 0; i < codeSnippets.length; i++) {
+          sceneCtx.fillText(codeSnippets[i], cardX + 16, cardY + 36 + i * lineSpacing);
+        }
+        sceneCtx.restore();
+
+        // 4. Vitruvian V1 Optik Efektli Karakteri (Bloom + Kromatik Aberasyon + Izgara)
+        if (vitruvianOpticImg.complete && vitruvianOpticImg.naturalWidth > 0) {
+          const imgPad = 22;
+          const imgSize = cardSize - imgPad * 2;
+          const imgX = cardX + imgPad;
+          const imgY = cardY + imgPad + 6;
+
+          sceneCtx.save();
+          // Çift katmanlı optik parıltı (Lens Bloom & Difüzyon)
+          sceneCtx.shadowColor = 'rgba(255, 255, 255, 0.70)';
+          sceneCtx.shadowBlur = 14;
+          sceneCtx.globalCompositeOperation = 'screen';
+          sceneCtx.drawImage(vitruvianOpticImg, imgX, imgY, imgSize, imgSize);
+          sceneCtx.restore();
+        }
+
+        // 5. Panel Üst Başlık & Amber Durum İmleri
+        sceneCtx.font = 'bold 11px "Share Tech Mono", monospace';
+        sceneCtx.fillStyle = '#ff9944';
+        sceneCtx.fillText('[ UNIT: V1 // VITRUVIAN ]', cardX + 14, cardY + 20);
+
+        // Yeşil aktiflik göstergesi
+        sceneCtx.beginPath();
+        sceneCtx.arc(cardX + cardSize - 18, cardY + 16, 4, 0, Math.PI * 2);
+        sceneCtx.fillStyle = '#43b581';
+        sceneCtx.fill();
+
+        // Başlık altı ayırıcı çizgi
+        sceneCtx.strokeStyle = 'rgba(255, 34, 34, 0.18)';
+        sceneCtx.lineWidth = 1;
+        sceneCtx.beginPath();
+        sceneCtx.moveTo(cardX + 12, cardY + 26);
+        sceneCtx.lineTo(cardX + cardSize - 12, cardY + 26);
+        sceneCtx.stroke();
+
+        // 6. 4 Köşe Keskin Parlak Kırmızı L-Braketleri (┌ ┐ └ ┘)
+        const bLen = 28; // Braket kol uzunluğu
+        const bThick = 3.5; // Braket et kalınlığı
         sceneCtx.strokeStyle = '#ff2222';
         sceneCtx.lineWidth = bThick;
         sceneCtx.lineCap = 'square';
-        sceneCtx.shadowColor = 'rgba(255, 34, 34, 0.85)';
-        sceneCtx.shadowBlur = 8;
+        sceneCtx.shadowColor = 'rgba(255, 34, 34, 0.9)';
+        sceneCtx.shadowBlur = 10;
 
         // Sol Üst (┌)
         sceneCtx.beginPath();
@@ -355,7 +400,7 @@ export default function CRTTerminal() {
         // Sağ Üst (┐)
         sceneCtx.beginPath();
         sceneCtx.moveTo(cardX + cardSize - bLen, cardY);
-        sceneCtx.lineTo(cardX + cardSize, cardY);
+        sceneCtx.lineTo(cardX + cardSize);
         sceneCtx.lineTo(cardX + cardSize, cardY + bLen);
         sceneCtx.stroke();
 

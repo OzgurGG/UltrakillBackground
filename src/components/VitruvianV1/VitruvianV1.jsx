@@ -17,3 +17,4 @@ export default function VitruvianV1({ className = '', glow = true, size }) {
     </div>
   );
 }
+
