@@ -11,6 +11,9 @@ function getRandomChar() {
    return CHARS[Math.floor(Math.random() * CHARS.length)];
 }
 
+const CELL_W = 14;
+const CELL_H = 16;
+
 // Pre-rendered radial glow sprite for high performance particle blit
 const glowSprite = (typeof document !== 'undefined') ? (() => {
    const c = document.createElement('canvas');
