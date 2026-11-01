@@ -71,12 +71,9 @@ export default function CRTTerminal() {
     avatarImg.crossOrigin = 'anonymous';
     avatarImg.src = profilRef.current.avatarUrl;
 
-    // Vitruvian V1 Optik Efektli Cizim (Cyan & Kirmizi Alarm Halleri)
+    // Vitruvian V1 Optik Efektli Cizim
     const vitruvianLedImg = new Image();
     vitruvianLedImg.src = '/vitruvian-v1-led-cyan.png';
-
-    const vitruvianRedImg = new Image();
-    vitruvianRedImg.src = '/vitruvian-v1-led-red.png';
 
     const zineTextureImg = new Image();
     zineTextureImg.src = '/switch-zine-texture.png';
@@ -111,9 +108,8 @@ export default function CRTTerminal() {
     spCtx.fillRect(2, 0, 1, 3);
     let scanPattern = null;
 
-    // 1. Vitruvian Canvas (Cyan Bloom & Kirmizi Meltdown Alarm Halleri)
+    // 1. Vitruvian Canvas (Cyan Bloom + Crisp White Core - 0ms per-frame CPU Blur)
     let cachedVitruvianCanvas = null;
-    let cachedVitruvianRedCanvas = null;
 
     function bakeVitruvian() {
       if (!vitruvianLedImg.complete || vitruvianLedImg.naturalWidth === 0) return;
@@ -133,25 +129,6 @@ export default function CRTTerminal() {
     }
     vitruvianLedImg.onload = bakeVitruvian;
     if (vitruvianLedImg.complete && vitruvianLedImg.naturalWidth > 0) bakeVitruvian();
-
-    function bakeVitruvianRed() {
-      if (!vitruvianRedImg.complete || vitruvianRedImg.naturalWidth === 0) return;
-      const size = 1080;
-      const pad = 44;
-      const c = document.createElement('canvas');
-      c.width = size + pad * 2;
-      c.height = size + pad * 2;
-      const cCtx = c.getContext('2d');
-      cCtx.shadowColor = 'rgba(255, 30, 30, 0.95)';
-      cCtx.shadowBlur = 22;
-      cCtx.drawImage(vitruvianRedImg, pad, pad, size, size);
-      cCtx.shadowColor = 'rgba(255, 220, 220, 0.95)';
-      cCtx.shadowBlur = 8;
-      cCtx.drawImage(vitruvianRedImg, pad, pad, size, size);
-      cachedVitruvianRedCanvas = c;
-    }
-    vitruvianRedImg.onload = bakeVitruvianRed;
-    if (vitruvianRedImg.complete && vitruvianRedImg.naturalWidth > 0) bakeVitruvianRed();
 
     // 2. Sol Header Banner Canvas (Zine Doku + SWITCH + Kirmizi Braketler)
     let cachedBannerCanvas = null;
@@ -587,19 +564,31 @@ export default function CRTTerminal() {
           sceneCtx.rect(rectX, rectY, rectW, rectH);
           sceneCtx.clip();
 
-          // 1. Goz Videosu (Goz acilisi video dokusu)
-          const vw = eyeVideo.videoWidth || 720;
-          const vh = eyeVideo.videoHeight || 480;
-          const scale = Math.max(rectW / vw, rectH / vh);
-          const dw = vw * scale;
-          const dh = vh * scale;
-          const dx = rectX + (rectW - dw) / 2;
-          const dy = rectY + (rectH - dh) / 2;
-          sceneCtx.drawImage(eyeVideo, dx, dy, dw, dh);
+          // 1. Zine Doku Arka Plani (Banner'in tamami zine dokusuyla dolsun)
+          if (cachedBannerCanvas) {
+            sceneCtx.drawImage(cachedBannerCanvas, rectX, rectY);
+          } else {
+            sceneCtx.fillStyle = '#121316';
+            sceneCtx.fillRect(rectX, rectY, rectW, rectH);
+          }
 
-          // 2. Hafif karartma ve kontrast katmani
-          sceneCtx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+          // 2. Goz Videosu (Boyutu orantili sekilde kucultulmus, gozu tam ve net gosteren olcek)
+          const vw = eyeVideo.videoWidth || 720;
+          const vh = eyeVideo.videoHeight || 900;
+          
+          // Kutu yuksekligine gore orantilayarak asiri 9x zoom kesildi, tum goz eksiksiz gorunur
+          const scale = (rectH * 1.18) / vh;
+          const dw = Math.round(vw * scale);
+          const dh = Math.round(vh * scale);
+          const dx = Math.round(rectX + (rectW - dw) / 2);
+          const dy = Math.round(rectY + (rectH - dh) / 2);
+
+          // Video altina hafif koyu kontrast katmani
+          sceneCtx.fillStyle = 'rgba(0, 0, 0, 0.40)';
           sceneCtx.fillRect(rectX, rectY, rectW, rectH);
+
+          // Videoyu tam ortada ciz
+          sceneCtx.drawImage(eyeVideo, dx, dy, dw, dh);
 
           // 3. 'SWITCH' Yazisi: VCR OSD Mono fontu ile gozun onunde stabil, net ve parildayarak durur
           const fontSize = Math.min(Math.round(rectH * 0.42), Math.round(rectW * 0.16));
@@ -772,51 +761,21 @@ export default function CRTTerminal() {
         }
         sceneCtx.restore();
 
-        // 4. ANATOMI CIZIMI (Meltdown aninda kirmizi alarm + optik jitter)
+        // 4. ANATOMI CIZIMI (Saf Cyan Fosfor Pariltisi - Kirmizi Glitch Yok)
         const vSize = Math.round(boxH * 1.076);
         const vY = Math.round(boxY - vSize * (32 / 1080));
         const vX = Math.round(boxX + boxW - vSize * (1036 / 1080));
 
-        const vitruvianToDraw = isMeltdownActive
-          ? (cachedVitruvianRedCanvas || cachedVitruvianCanvas)
-          : cachedVitruvianCanvas;
-
-        if (vitruvianToDraw) {
+        if (cachedVitruvianCanvas) {
           const vPad = Math.round(vSize * (44 / 1080));
-          const vGlitchX = isMeltdownActive ? Math.round((Math.random() - 0.5) * 8) : 0;
           sceneCtx.save();
           sceneCtx.globalCompositeOperation = 'screen';
           sceneCtx.drawImage(
-            vitruvianToDraw,
-            vX - vPad + vGlitchX, vY - vPad,
+            cachedVitruvianCanvas,
+            vX - vPad, vY - vPad,
             vSize + vPad * 2, vSize + vPad * 2
           );
-
-          if (isMeltdownActive && Math.random() < 0.35) {
-            sceneCtx.globalAlpha = 0.55;
-            sceneCtx.drawImage(
-              vitruvianToDraw,
-              vX - vPad - 6, vY - vPad,
-              vSize + vPad * 2, vSize + vPad * 2
-            );
-          }
           sceneCtx.restore();
-        }
-
-        // 5. Meltdown Yatay Scanline Yirtilmalari (Glitch Tears)
-        if (isMeltdownActive && Math.random() < 0.45) {
-          const tearY = boxY + Math.random() * (boxH - 24);
-          const tearH = 3 + Math.random() * 14;
-          const tearShift = Math.round((Math.random() - 0.5) * 24);
-          try {
-            sceneCtx.drawImage(
-              sceneCanvas,
-              boxX, tearY, boxW, tearH,
-              boxX + tearShift, tearY, boxW, tearH
-            );
-            sceneCtx.fillStyle = 'rgba(255, 30, 50, 0.16)';
-            sceneCtx.fillRect(boxX, tearY, boxW, tearH);
-          } catch (e) {}
         }
 
         sceneCtx.restore(); // clip sonu
