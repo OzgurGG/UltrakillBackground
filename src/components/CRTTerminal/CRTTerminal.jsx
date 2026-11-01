@@ -1453,6 +1453,11 @@ export default function CRTTerminal() {
       const boxY = HEADER_HEIGHT + padY;
 
       // D1. SOL TARAF: ÜST YATAY BAŞLIK BANNERI (Önceden hesaplanmış tek çağrılık GPU blit)
+      const rectX = padX;
+      const rectY = boxY;
+      const rectW = Math.max(50, (boxX - padX) - rectX);
+      const rectH = Math.min(135, Math.max(88, Math.round(boxH * 0.20)));
+
       if (rectW > 60 && rectH > 40) {
         if (cachedBannerCanvas) {
           sceneCtx.drawImage(cachedBannerCanvas, rectX, rectY);
