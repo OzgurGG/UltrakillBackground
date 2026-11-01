@@ -10,8 +10,8 @@ const CHAR_MAP = {
   13: '┤', 14: '┬', 15: '┼'
 };
 
-const DECAY_CHARS = ['─', '╌', '╌', '·', '·', ' '];
-const DECAY_CHARS_V = ['│', '╎', '╎', '·', '·', ' '];
+const DECAY_CHARS = ['─', '░', '╌', '·', '·', ' '];
+const DECAY_CHARS_V = ['│', '▒', '╎', '·', '·', ' '];
 
 const DIRS = [
   { dr: -1, dc: 0, bit: 1, opp: 4, name: 'up' },
@@ -64,24 +64,30 @@ const CONFIG = {
 
 const DROP_STATES = { ALIVE: 'alive', DYING: 'dying', DEAD: 'dead' };
 
-// Elektrik Cyan -> Aqua -> Okyanus Mavisi -> Fosfor İzi (Sıfır çöp tahsisi)
+// Melankolik Gotik-Punk Fosfor Haritası:
+// Taze Sinyal: Hayaletimsi Kemik Külü / Soluk Gümüş (rgba(215, 210, 225))
+// Orta Yaş: Füme Grafit / Morumsu Gece Çeliği (rgba(115, 105, 135))
+// Eski / Çürüyen İzi: İsli Kömür / Derin Mahzen Gölgeleri (rgba(60, 52, 72))
 const COLOR_TABLE = Array.from({ length: 6 }, (_, a) => {
   return Array.from({ length: 11 }, (_, i) => {
     const normI = i / 10;
-    const alpha = Math.max(0.04, normI * (0.72 - a * 0.08)).toFixed(3);
+    const alpha = Math.max(0.04, normI * (0.64 - a * 0.08)).toFixed(3);
     let r, g, b;
     if (a <= 1) {
-      r = Math.round(20 + normI * 40);
-      g = Math.round(195 + normI * 60);
-      b = 255;
+      // Taze kemik külü & hayaletimsi gümüş
+      r = Math.round(180 + normI * 45);
+      g = Math.round(175 + normI * 40);
+      b = Math.round(195 + normI * 40);
     } else if (a <= 3) {
-      r = Math.round(5 + normI * 15);
-      g = Math.round(135 + normI * 55);
-      b = Math.round(205 + normI * 50);
+      // Füme grafit ve morumsu gotik arduvaz
+      r = Math.round(105 + normI * 35);
+      g = Math.round(98 + normI * 30);
+      b = Math.round(130 + normI * 30);
     } else {
-      r = 0;
-      g = Math.round(70 + normI * 50);
-      b = Math.round(125 + normI * 55);
+      // Koyu isli kömür & mahzen külü
+      r = Math.round(55 + normI * 25);
+      g = Math.round(48 + normI * 20);
+      b = Math.round(68 + normI * 25);
     }
     return `rgba(${r},${g},${b},${alpha})`;
   });
@@ -118,34 +124,50 @@ function createGlowSprite(size, innerColor, midColor, outerColor, addRing = fals
   return c;
 }
 
-const headGlowSprite = createGlowSprite(
+// 1. Canlı Başlık Parıltıları (Gotik-Punk Arteriyel & Ember Sinyalleri)
+const bloodGlowSprite = createGlowSprite(
+  36,
+  'rgba(255, 235, 235, 0.95)',
+  'rgba(240, 35, 55, 0.65)',
+  'rgba(145, 15, 25, 0.18)'
+);
+
+const amberGlowSprite = createGlowSprite(
+  36,
+  'rgba(255, 250, 225, 0.95)',
+  'rgba(245, 155, 30, 0.60)',
+  'rgba(140, 75, 10, 0.16)'
+);
+
+const phantomGlowSprite = createGlowSprite(
   36,
   'rgba(255, 255, 255, 0.95)',
-  'rgba(0, 230, 255, 0.58)',
-  'rgba(0, 140, 255, 0.16)'
+  'rgba(185, 165, 215, 0.55)',
+  'rgba(85, 65, 120, 0.15)'
 );
 
-const endpointBeaconSprite = createGlowSprite(
+// 2. Gotik Uç Nokta Beaconları (Altar, Liturji ve Reliquary Mühürleri)
+const sigilBeaconSprite = createGlowSprite(
   32,
-  'rgba(0, 240, 255, 0.90)',
-  'rgba(0, 205, 255, 0.45)',
-  'rgba(0, 115, 225, 0.12)',
+  'rgba(255, 45, 60, 0.95)',
+  'rgba(205, 25, 40, 0.50)',
+  'rgba(120, 10, 20, 0.15)',
   true
 );
 
-const alertBeaconSprite = createGlowSprite(
+const relicBeaconSprite = createGlowSprite(
   32,
-  'rgba(255, 90, 80, 0.95)',
-  'rgba(255, 50, 45, 0.50)',
-  'rgba(200, 20, 20, 0.15)',
+  'rgba(255, 185, 50, 0.95)',
+  'rgba(215, 140, 30, 0.50)',
+  'rgba(130, 70, 10, 0.15)',
   true
 );
 
-const checkpointBeaconSprite = createGlowSprite(
+const spectralBeaconSprite = createGlowSprite(
   32,
-  'rgba(60, 255, 185, 0.95)',
-  'rgba(20, 230, 150, 0.50)',
-  'rgba(0, 170, 110, 0.15)',
+  'rgba(195, 150, 245, 0.95)',
+  'rgba(150, 105, 200, 0.50)',
+  'rgba(85, 55, 125, 0.15)',
   true
 );
 
@@ -245,6 +267,8 @@ export function initPathDrops(cvs) {
     function spawnDrop(r, c, dir, targetR = -1, targetC = -1, fromNodeId = null) {
       if (r < 0 || r >= rows || c < 0 || c >= cols) return;
       if (grid[r][c].blocked) return;
+      const randF = Math.random();
+      const flavor = randF < 0.55 ? 'BLOOD' : (randF < 0.82 ? 'EMBER' : 'PHANTOM');
       drops.push({
         r, c, dir,
         speed: CONFIG.drops.speed[0] + Math.random() * (CONFIG.drops.speed[1] - CONFIG.drops.speed[0]),
@@ -252,6 +276,7 @@ export function initPathDrops(cvs) {
         state: DROP_STATES.ALIVE,
         dyingTimer: 0,
         steps: 0,
+        flavor,
         visitedDirs: new Set(),
         targetR, targetC,   // wander target (open space)
         fromNodeId,
@@ -369,9 +394,9 @@ export function initPathDrops(cvs) {
           if (cr2 >= 0 && cr2 < rows && cc2 >= 0 && cc2 < cols)
             if (inNode(cr2, cc2) || grid[cr2][cc2].isCard) {
               if (!grid[r][c].isCard) {
-                // Mikro-terminal ucu
+                // Mikro-terminal ucu (Gotik Kutsama İzi)
                 const cell = grid[r][c];
-                cell.val = 0; cell.boxText = '◈';
+                cell.val = 0; cell.boxText = '†';
                 cell.blocked = true; cell.isCard = true;
                 cell.intensity = 1.0; cell.life = 5.0;
                 cell.cardOriginR = r; cell.cardOriginC = c;
@@ -419,20 +444,21 @@ export function initPathDrops(cvs) {
       const cwPx = n.w * CELL_W, chPx = n.h * CELL_H;
       const cx = cxPx + cwPx / 2, cy = cyPx + chPx / 2;
 
-      ctx.fillStyle = `rgba(2,10,18,${alpha * 0.92})`;
+      ctx.fillStyle = `rgba(10,8,14,${alpha * 0.94})`;
       ctx.fillRect(cxPx, cyPx, cwPx, chPx);
-      ctx.strokeStyle = `rgba(0, 210, 255, ${(0.32 + total * 0.32) * alpha})`;
+      ctx.strokeStyle = `rgba(150, 135, 165, ${(0.32 + total * 0.32) * alpha})`;
       ctx.lineWidth = 1;
       ctx.strokeRect(cxPx, cyPx, cwPx, chPx);
 
-      const tick = 5, drift = Math.sin(n.borderAng) * 1.4;
+      // Gotik çentik köşebentleri
+      const tick = 6, drift = Math.sin(n.borderAng) * 1.2;
       const corners = [
         { x: cxPx, y: cyPx, sx: 1, sy: 1 },
         { x: cxPx + cwPx, y: cyPx, sx: -1, sy: 1 },
         { x: cxPx, y: cyPx + chPx, sx: 1, sy: -1 },
         { x: cxPx + cwPx, y: cyPx + chPx, sx: -1, sy: -1 },
       ];
-      ctx.strokeStyle = `rgba(0, 245, 255, ${(0.65 + total * 0.35) * alpha})`;
+      ctx.strokeStyle = `rgba(215, 195, 230, ${(0.65 + total * 0.35) * alpha})`;
       ctx.lineWidth = 1;
       for (const { x, y, sx, sy } of corners) {
         const tx = x + sx * drift, ty = y + sy * drift;
@@ -441,21 +467,21 @@ export function initPathDrops(cvs) {
       }
 
       setFont('bold 10px "Share Tech Mono",monospace');
-      ctx.fillStyle = `rgba(215, 245, 255, ${(0.75 + total * 0.25) * alpha})`;
+      ctx.fillStyle = `rgba(235, 230, 245, ${(0.75 + total * 0.25) * alpha})`;
       ctx.textAlign = 'center';
       ctx.fillText(n.label, cx, cy - 2);
 
-      // Life bar
+      // İbadethane / Reliquary Can Çubuğu (Artery Crimson)
       const barW = (cwPx - 10) * lifeRatio;
-      ctx.fillStyle = `rgba(0, 40, 75, ${0.45 * alpha})`;
+      ctx.fillStyle = `rgba(45, 12, 18, ${0.55 * alpha})`;
       ctx.fillRect(cxPx + 5, cyPx + chPx - 5, cwPx - 10, 2);
-      ctx.fillStyle = `rgba(0, 240, 255, ${0.85 * alpha})`;
+      ctx.fillStyle = `rgba(205, 35, 50, ${0.85 * alpha})`;
       ctx.fillRect(cxPx + 5, cyPx + chPx - 5, barW, 2);
 
       if (n.hitInt > 0) {
         ctx.globalCompositeOperation = 'screen';
         const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, cwPx * 0.6);
-        grd.addColorStop(0, `rgba(0, 230, 255, ${n.hitInt * 0.22})`);
+        grd.addColorStop(0, `rgba(225, 35, 55, ${n.hitInt * 0.25})`);
         grd.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = grd;
         ctx.fillRect(cx - cwPx, cy - chPx, cwPx * 2, chPx * 2);
@@ -548,6 +574,7 @@ export function initPathDrops(cvs) {
                 speed: CONFIG.drops.speed[0] + Math.random() * (CONFIG.drops.speed[1] - CONFIG.drops.speed[0]),
                 moveTimer: 0, state: DROP_STATES.ALIVE, dyingTimer: 0,
                 steps: 0, visitedDirs: new Set(),
+                flavor: Math.random() < 0.65 ? drop.flavor : (Math.random() < 0.5 ? 'BLOOD' : 'EMBER'),
                 targetR: tgt.r, targetC: tgt.c,
                 fromNodeId: drop.fromNodeId,
                 retargetTimer: 3.0 + Math.random() * 3.0,
@@ -610,7 +637,7 @@ export function initPathDrops(cvs) {
               const cell = grid[drop.r][drop.c];
               cell.blocked = true; cell.isCard = true;
               cell.val = 0;
-              cell.boxText = '◈';
+              cell.boxText = '†';
               cell.intensity = 1.0;
               cell.life = 4.5;
               cell.age = 0;
@@ -676,58 +703,70 @@ export function initPathDrops(cvs) {
           ctx.fillText(char, px, py);
         }
         if (cell.boxText) {
-          // A. Parlama Halesi (Screen Blend)
-          if (endpointBeaconSprite) {
+          // A. Gotik Kutsama Halesi (Screen Blend)
+          if (sigilBeaconSprite) {
             ctx.globalCompositeOperation = 'screen';
-            ctx.drawImage(endpointBeaconSprite, px - 16, py - 16);
+            ctx.drawImage(sigilBeaconSprite, px - 16, py - 16);
             ctx.globalCompositeOperation = 'source-over';
           }
-          // B. Hassas Mikro Baklava Test Padi
-          ctx.strokeStyle = `rgba(0, 240, 255, ${cell.intensity * 0.85})`;
+          // B. Gotik Kutsama Haçı Retikülü (Consecration Cross Sigil)
+          ctx.strokeStyle = `rgba(195, 35, 50, ${cell.intensity * 0.85})`;
           ctx.lineWidth = 1;
           ctx.beginPath();
-          ctx.moveTo(px, py - 4.5);
-          ctx.lineTo(px + 4.5, py);
-          ctx.lineTo(px, py + 4.5);
-          ctx.lineTo(px - 4.5, py);
-          ctx.closePath();
+          // Dikey kiriş (Latin haçı oranları)
+          ctx.moveTo(px, py - 6);
+          ctx.lineTo(px, py + 6);
+          // Yatay kiriş
+          ctx.moveTo(px - 4.5, py - 1.5);
+          ctx.lineTo(px + 4.5, py - 1.5);
           ctx.stroke();
 
-          // C. Optik Retikül Çentikleri
+          // 4 Diyagonal Çentik
           ctx.beginPath();
-          ctx.moveTo(px - 6.5, py); ctx.lineTo(px - 4.5, py);
-          ctx.moveTo(px + 4.5, py); ctx.lineTo(px + 6.5, py);
-          ctx.moveTo(px, py - 6.5); ctx.lineTo(px, py - 4.5);
-          ctx.moveTo(px, py + 4.5); ctx.lineTo(px, py + 6.5);
+          ctx.moveTo(px - 3, py - 3); ctx.lineTo(px - 1.5, py - 1.5);
+          ctx.moveTo(px + 3, py - 3); ctx.lineTo(px + 1.5, py - 1.5);
+          ctx.moveTo(px - 3, py + 3); ctx.lineTo(px - 1.5, py + 1.5);
+          ctx.moveTo(px + 3, py + 3); ctx.lineTo(px + 1.5, py + 1.5);
           ctx.stroke();
 
-          // D. Yüksek Enerjili Beyaz Çekirdek
-          ctx.fillStyle = `rgba(255, 255, 255, ${cell.intensity * 0.95})`;
+          // C. Közleşmiş Kor Çekirdek
+          ctx.fillStyle = `rgba(255, 235, 220, ${cell.intensity * 0.95})`;
           ctx.beginPath();
-          ctx.arc(px, py, 1.4, 0, Math.PI * 2);
+          ctx.arc(px, py - 1.5, 1.3, 0, Math.PI * 2);
           ctx.fill();
         }
       }
 
-      // 2. Canlı Başlıklar (Head Droplets)
+      // 2. Canlı Başlıklar (Melankolik Gotik Paketler)
       for (let i = 0; i < drops.length; i++) {
         const drop = drops[i];
         if (drop.state !== DROP_STATES.ALIVE) continue;
         const cell = grid[drop.r][drop.c];
         const char = CHAR_MAP[cell.val] || '█';
         const px = drop.c * CELL_W + CELL_W / 2, py = drop.r * CELL_H + CELL_H / 2;
+        const fl = drop.flavor || 'BLOOD';
 
-        if (headGlowSprite) {
+        let sprite = bloodGlowSprite;
+        let charCol = '#ffeaeb';
+        if (fl === 'EMBER') {
+          sprite = amberGlowSprite;
+          charCol = '#fff8e6';
+        } else if (fl === 'PHANTOM') {
+          sprite = phantomGlowSprite;
+          charCol = '#f5f0ff';
+        }
+
+        if (sprite) {
           ctx.globalCompositeOperation = 'screen';
-          ctx.drawImage(headGlowSprite, px - 18, py - 18);
+          ctx.drawImage(sprite, px - 18, py - 18);
           ctx.globalCompositeOperation = 'source-over';
         }
 
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = charCol;
         ctx.fillText(char, px, py);
       }
 
-      // 3. Kart Uç Noktaları (Cyber Badges & Endpoint Solder Terminals)
+      // 3. Kart Uç Noktaları (Gotik Reliquary & Altar Plakaları)
       if (activeCards.length > 0) {
         setFont('bold 10px "Share Tech Mono",monospace');
         for (let i = 0; i < activeCards.length; i++) {
@@ -736,58 +775,74 @@ export function initPathDrops(cvs) {
           const px = c * CELL_W + (CELL_W * boxW) / 2;
           const py = r * CELL_H + (CELL_H * 2) / 2;
           const textW = ctx.measureText(cell.cardLabel).width;
-          const cw = Math.max(CELL_W * boxW + 8, textW + 30);
+          const cw = Math.max(CELL_W * boxW + 12, textW + 36);
           const ch = CELL_H + 5;
           const sx = px - cw / 2, sy = py - ch / 2;
           const cType = cell.cardType || 'PATH';
           const int = cell.intensity;
 
-          // Kategoriye göre renk ve efekt ayrımı
-          let bgR, bgG, bgB, bR, bG, bB, textCol, beaconSprite;
+          // Gotik-Punk renk, sigil ve kutsal ışık ayrımı
+          let bgR, bgG, bgB, bR, bG, bB, rimR, rimG, rimB, textCol, beaconSprite, sigilChar;
           if (cType === 'ALERT') {
-            bgR = 18; bgG = 4; bgB = 6;
-            bR = 255; bG = 65; bB = 65;
-            textCol = `rgba(255, 220, 215, ${int})`;
-            beaconSprite = alertBeaconSprite;
+            // Liturjik Felaket & Şehitlik (Dried Blood & Obsidian)
+            bgR = 18; bgG = 4; bgB = 7;
+            bR = 205; bG = 30; bB = 48;
+            rimR = 135; rimG = 15; rimB = 25;
+            textCol = `rgba(250, 222, 225, ${int})`;
+            beaconSprite = sigilBeaconSprite;
+            sigilChar = '†';
           } else if (cType === 'STOP') {
-            bgR = 2; bgG = 16; bgB = 12;
-            bR = 0; bG = 255; bB = 175;
-            textCol = `rgba(205, 255, 235, ${int})`;
-            beaconSprite = checkpointBeaconSprite;
+            // Mabed & Reliquary (Smoked Sepulcher & Tarnished Relic Gold)
+            bgR = 16; bgG = 11; bgB = 4;
+            bR = 215; bG = 150; bB = 35;
+            rimR = 140; rimG = 95; rimB = 18;
+            textCol = `rgba(255, 238, 205, ${int})`;
+            beaconSprite = relicBeaconSprite;
+            sigilChar = '♰';
           } else {
-            bgR = 2; bgG = 12; bgB = 22;
-            bR = 0; bG = 230; bB = 255;
-            textCol = `rgba(215, 245, 255, ${int})`;
-            beaconSprite = endpointBeaconSprite;
+            // Araf, Düşüş & Hayalet Sinyal (Smoked Violet & Bruised Iron)
+            bgR = 13; bgG = 8; bgB = 19;
+            bR = 155; bG = 115; bB = 190;
+            rimR = 95; rimG = 65; rimB = 125;
+            textCol = `rgba(235, 225, 248, ${int})`;
+            beaconSprite = spectralBeaconSprite;
+            sigilChar = '☩';
           }
 
-          // A. 45 Derece Pahlı (Chamfered) Siber Rozet
-          const cut = 5;
+          // A. Gotik Lahit / Reliquary Geometrisi (Hexagonal Coffin Silhouette)
+          const topCut = 7;
+          const botCut = 4;
           ctx.beginPath();
-          ctx.moveTo(sx + cut, sy);
-          ctx.lineTo(sx + cw - 1, sy);
-          ctx.lineTo(sx + cw - 1, sy + ch - cut);
-          ctx.lineTo(sx + cw - 1 - cut, sy + ch);
-          ctx.lineTo(sx, sy + ch);
-          ctx.lineTo(sx, sy + cut);
+          ctx.moveTo(sx + topCut, sy);
+          ctx.lineTo(sx + cw - topCut, sy);
+          ctx.lineTo(sx + cw, sy + topCut);
+          ctx.lineTo(sx + cw, sy + ch - botCut);
+          ctx.lineTo(sx + cw - botCut, sy + ch);
+          ctx.lineTo(sx + botCut, sy + ch);
+          ctx.lineTo(sx, sy + ch - botCut);
+          ctx.lineTo(sx, sy + topCut);
           ctx.closePath();
 
-          ctx.fillStyle = `rgba(${bgR},${bgG},${bgB},${int * 0.94})`;
+          ctx.fillStyle = `rgba(${bgR},${bgG},${bgB},${int * 0.96})`;
           ctx.fill();
 
-          ctx.strokeStyle = `rgba(${bR},${bG},${bB},${int * 0.85})`;
+          ctx.strokeStyle = `rgba(${bR},${bG},${bB},${int * 0.90})`;
           ctx.lineWidth = 1;
           ctx.stroke();
 
-          // B. Üst Sağ Teknik Çentik Vurgusu
+          // B. İç Kabartma Demir Çerçeve (Double Reliquary Rim)
+          ctx.strokeStyle = `rgba(${rimR},${rimG},${rimB},${int * 0.55})`;
+          ctx.strokeRect(sx + 3, sy + 2, cw - 6, ch - 4);
+
+          // C. Tepe Gotik Çentik ve Haç İzi
           ctx.strokeStyle = `rgba(${bR},${bG},${bB},${int * 0.95})`;
           ctx.beginPath();
-          ctx.moveTo(sx + cw - 12, sy);
-          ctx.lineTo(sx + cw - 1, sy);
+          ctx.moveTo(px - 4, sy); ctx.lineTo(px + 4, sy);
+          ctx.moveTo(px, sy - 2); ctx.lineTo(px, sy + 2);
           ctx.stroke();
 
-          // C. Durum LED Beaconi (Sol ikon)
-          const ledX = sx + 10;
+          // D. Durum Kandili (Sol Işık Beaconi + Haç)
+          const ledX = sx + 11;
           const ledY = py;
           if (beaconSprite) {
             ctx.globalCompositeOperation = 'screen';
@@ -796,17 +851,22 @@ export function initPathDrops(cvs) {
           }
           ctx.fillStyle = '#ffffff';
           ctx.beginPath();
-          ctx.arc(ledX, ledY, 1.6, 0, Math.PI * 2);
+          ctx.arc(ledX, ledY, 1.4, 0, Math.PI * 2);
           ctx.fill();
 
-          // D. Etiket Metni
+          // Gotik Sigil Damgası
+          ctx.fillStyle = `rgba(${bR},${bG},${bB},${int * 0.95})`;
+          ctx.textAlign = 'center';
+          ctx.fillText(sigilChar, sx + 22, py + 1);
+
+          // E. Etiket Metni (Kemik Beyazı / Amber / Bordo)
           ctx.fillStyle = textCol;
           ctx.textAlign = 'left';
-          ctx.fillText(cell.cardLabel, sx + 20, py + 1);
+          ctx.fillText(cell.cardLabel, sx + 30, py + 1);
 
-          // E. Devre Hattı Kökü & Terminal Lehim Halkası (◎)
-          const stemEndY = sy + ch + CELL_H * 0.42;
-          ctx.strokeStyle = `rgba(${bR},${bG},${bB},${int * 0.6})`;
+          // F. Mabed Topraklama Hattı & Demir Haç Padi (┼ ◎)
+          const stemEndY = sy + ch + CELL_H * 0.44;
+          ctx.strokeStyle = `rgba(${bR},${bG},${bB},${int * 0.65})`;
           ctx.lineWidth = 1;
           ctx.setLineDash([2, 2]);
           ctx.beginPath();
@@ -815,14 +875,20 @@ export function initPathDrops(cvs) {
           ctx.stroke();
           ctx.setLineDash([]);
 
-          // Terminal Lehim Padi (◎)
+          // 4 Yönlü Kutsama Çivisi / Haç İğnesi (┼)
           ctx.strokeStyle = `rgba(${bR},${bG},${bB},${int * 0.85})`;
           ctx.beginPath();
-          ctx.arc(px, stemEndY, 2.5, 0, Math.PI * 2);
+          ctx.moveTo(px - 4.5, stemEndY); ctx.lineTo(px + 4.5, stemEndY);
+          ctx.moveTo(px, stemEndY - 4.5); ctx.lineTo(px, stemEndY + 4.5);
           ctx.stroke();
-          ctx.fillStyle = '#ffffff';
+
+          // Merkez Lehim Gözü (◎)
           ctx.beginPath();
-          ctx.arc(px, stemEndY, 1.0, 0, Math.PI * 2);
+          ctx.arc(px, stemEndY, 2.4, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = `rgba(255, 240, 230, ${int * 0.95})`;
+          ctx.beginPath();
+          ctx.arc(px, stemEndY, 1.1, 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.textAlign = 'center';
