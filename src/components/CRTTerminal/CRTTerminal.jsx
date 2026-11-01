@@ -866,6 +866,62 @@ function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
   }
 }
 
+function drawNeonBrackets(ctx, x, y, w, h) {
+  const bLen = 34;
+  const bThick = 4;
+  
+  ctx.save();
+  ctx.strokeStyle = '#ff2222';
+  ctx.lineWidth = bThick;
+  ctx.lineCap = 'square';
+  ctx.shadowColor = 'rgba(255, 34, 34, 0.95)';
+  ctx.shadowBlur = 16;
+
+  // Sol Üst (┌)
+  ctx.beginPath();
+  ctx.moveTo(x, y + bLen); ctx.lineTo(x, y); ctx.lineTo(x + bLen, y);
+  ctx.stroke();
+
+  // Sağ Üst (┐)
+  ctx.beginPath();
+  ctx.moveTo(x + w - bLen, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + bLen);
+  ctx.stroke();
+
+  // Sol Alt (└)
+  ctx.beginPath();
+  ctx.moveTo(x, y + h - bLen); ctx.lineTo(x, y + h); ctx.lineTo(x + bLen, y + h);
+  ctx.stroke();
+
+  // Sağ Alt (┘)
+  ctx.beginPath();
+  ctx.moveTo(x + w - bLen, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w, y + h - bLen);
+  ctx.stroke();
+
+  // İkinci geçiş: İç akkor çekirdek
+  ctx.strokeStyle = '#ff9999';
+  ctx.lineWidth = 1.5;
+  ctx.shadowColor = '#ffffff';
+  ctx.shadowBlur = 4;
+
+  ctx.beginPath();
+  ctx.moveTo(x, y + bLen); ctx.lineTo(x, y); ctx.lineTo(x + bLen, y);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x + w - bLen, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + bLen);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x, y + h - bLen); ctx.lineTo(x, y + h); ctx.lineTo(x + bLen, y + h);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x + w - bLen, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w, y + h - bLen);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
 export default function CRTTerminal() {
   const mountRef = useRef(null);
   const [now, setNow] = useState(Date.now());
@@ -935,6 +991,14 @@ export default function CRTTerminal() {
     // Vitruvian V1 Optik Efektli Çizim (Chromatic Aberration + Multi-Bloom + Aperture Grille)
     const vitruvianLedImg = new Image();
     vitruvianLedImg.src = '/vitruvian-v1-led-cyan.png';
+
+    const zineTextureImg = new Image();
+    zineTextureImg.src = '/switch-zine-texture.png';
+
+    if (document.fonts) {
+      document.fonts.load('64px "VCR OSD Mono"');
+      document.fonts.load('64px "VCR OST Mono"');
+    }
 
     // 4. Three.js Sahnesi ve WebGL Renderer
     const scene = new THREE.Scene();
@@ -1257,17 +1321,60 @@ export default function CRTTerminal() {
       sceneCtx.drawImage(mazeCanvas, 0, HEADER_HEIGHT, width, Math.max(10, height - HEADER_HEIGHT));
 
 
-      // D. SAĞ TARAF: ANATOMİ ÇİZİMİNİN KENDİ BOYUTUNDAKİ KARE PANEL ("KAREMİZ")
-      // Kullanıcı isteği: "karakteri direkt olduğu gibi bırak, karetmizi anatomi çiziminin boyutuna küçült ama antomi çizimini elleme aynı boyutta kalsın. üstteki yazıları sil, etrafındaki çizgi ve yazılarıda sil. başka bişey yapıcaz buna"
       const bodyH = Math.max(10, height - HEADER_HEIGHT);
       const padX = 18;
       const padY = 12;
 
-      // Karemizin boyutu anatomi çiziminin boyutuyla birebir eşleşir (tam kare)
+      // Sağ taraf: Anatomi karemizin boyutu
       const boxH = bodyH - padY * 2;
       const boxW = boxH;
       const boxX = width - padX - boxW;
       const boxY = HEADER_HEIGHT + padY;
+
+      // D1. SOL TARAF: ANATOMİ KAREMİZDEN KALAN BÖLÜMÜN DİKDÖRTGEN PANELİ
+      // Kullanıcı isteği: "aynı karden bitaendaha oluştur, ama bu dikdörtgen olacak, bizimö anatomi karemizden kalan bölümün sol dan başlayıp anatomi küpümüzün sınırna kadar ilerleyecek, içi böyle bu görselin arkasındaki texture gibi. bi texture çıkart, bütün dikdörtgen boyunca bu textıre olsun ve vcr ost mono ile SWITCH yazsın. başlık gibi düşün işte. başka bişey ekleme sade olacak ve sadece istediğim olacak"
+      const rectX = padX;
+      const rectY = boxY;
+      const rectH = boxH;
+      const rectW = Math.max(50, (boxX - padX) - rectX);
+
+      if (rectW > 100 && rectH > 100) {
+        sceneCtx.save();
+        sceneCtx.beginPath();
+        sceneCtx.rect(rectX, rectY, rectW, rectH);
+        sceneCtx.clip();
+
+        // 1. ZİNE / KAĞIT DOKUSU (Görseldeki koyu kömür rengi doku bütün dikdörtgen boyunca akar)
+        sceneCtx.fillStyle = '#121316';
+        sceneCtx.fillRect(rectX, rectY, rectW, rectH);
+
+        if (zineTextureImg.complete && zineTextureImg.naturalWidth > 0) {
+          const pattern = sceneCtx.createPattern(zineTextureImg, 'repeat');
+          if (pattern) {
+            sceneCtx.fillStyle = pattern;
+            sceneCtx.fillRect(rectX, rectY, rectW, rectH);
+          }
+        }
+
+        // 2. VCR OSD MONO İLE SADE "SWITCH" BAŞLIĞI
+        const titleSize = Math.max(42, Math.min(96, Math.floor(rectW * 0.12)));
+        sceneCtx.save();
+        sceneCtx.font = `bold ${titleSize}px "VCR OSD Mono", "VCR OST Mono", monospace`;
+        sceneCtx.textAlign = 'center';
+        sceneCtx.textBaseline = 'middle';
+        sceneCtx.fillStyle = '#ede8dc';
+        sceneCtx.shadowColor = 'rgba(237, 232, 220, 0.4)';
+        sceneCtx.shadowBlur = 10;
+        sceneCtx.fillText('SWITCH', rectX + rectW / 2, rectY + rectH / 2);
+        sceneCtx.restore();
+
+        sceneCtx.restore(); // clip sonu
+
+        // DİKDÖRTGENİN 4 KÖŞE PARLAK KIRMIZI L-BRAKETLERİ
+        drawNeonBrackets(sceneCtx, rectX, rectY, rectW, rectH);
+      }
+
+      // D2. SAĞ TARAF: ANATOMİ ÇİZİMİNİN KENDİ BOYUTUNDAKİ KARE PANEL ("KAREMİZ")
 
       if (boxW > 100 && boxH > 100) {
         sceneCtx.save();
@@ -1420,80 +1527,8 @@ export default function CRTTerminal() {
 
         sceneCtx.restore(); // clip sonu
 
-        // 4. 4 KÖŞE PARLAK KIRMIZI L-BRAKETLERİ (KAREMİZİN KÖŞELERİNDE ÇİFT GEÇİŞLİ NEON EFEKTİ)
-        const bLen = 34; // Braket kol uzunluğu
-        const bThick = 4; // Braket kalınlığı
-        
-        sceneCtx.save();
-        sceneCtx.strokeStyle = '#ff2222';
-        sceneCtx.lineWidth = bThick;
-        sceneCtx.lineCap = 'square';
-        sceneCtx.shadowColor = 'rgba(255, 34, 34, 0.95)';
-        sceneCtx.shadowBlur = 16;
-
-        // Sol Üst (┌)
-        sceneCtx.beginPath();
-        sceneCtx.moveTo(boxX, boxY + bLen);
-        sceneCtx.lineTo(boxX, boxY);
-        sceneCtx.lineTo(boxX + bLen, boxY);
-        sceneCtx.stroke();
-
-        // Sağ Üst (┐)
-        sceneCtx.beginPath();
-        sceneCtx.moveTo(boxX + boxW - bLen, boxY);
-        sceneCtx.lineTo(boxX + boxW, boxY);
-        sceneCtx.lineTo(boxX + boxW, boxY + bLen);
-        sceneCtx.stroke();
-
-        // Sol Alt (└)
-        sceneCtx.beginPath();
-        sceneCtx.moveTo(boxX, boxY + boxH - bLen);
-        sceneCtx.lineTo(boxX, boxY + boxH);
-        sceneCtx.lineTo(boxX + bLen, boxY + boxH);
-        sceneCtx.stroke();
-
-        // Sağ Alt (┘)
-        sceneCtx.beginPath();
-        sceneCtx.moveTo(boxX + boxW - bLen, boxY + boxH);
-        sceneCtx.lineTo(boxX + boxW, boxY + boxH);
-        sceneCtx.lineTo(boxX + boxW, boxY + boxH - bLen);
-        sceneCtx.stroke();
-
-        // İkinci geçiş: İç beyaz akkor çekirdek (Gerçek neon tüp hissi)
-        sceneCtx.strokeStyle = '#ff9999';
-        sceneCtx.lineWidth = 1.5;
-        sceneCtx.shadowColor = '#ffffff';
-        sceneCtx.shadowBlur = 4;
-
-        // Sol Üst (┌)
-        sceneCtx.beginPath();
-        sceneCtx.moveTo(boxX, boxY + bLen);
-        sceneCtx.lineTo(boxX, boxY);
-        sceneCtx.lineTo(boxX + bLen, boxY);
-        sceneCtx.stroke();
-
-        // Sağ Üst (┐)
-        sceneCtx.beginPath();
-        sceneCtx.moveTo(boxX + boxW - bLen, boxY);
-        sceneCtx.lineTo(boxX + boxW, boxY);
-        sceneCtx.lineTo(boxX + boxW, boxY + bLen);
-        sceneCtx.stroke();
-
-        // Sol Alt (└)
-        sceneCtx.beginPath();
-        sceneCtx.moveTo(boxX, boxY + boxH - bLen);
-        sceneCtx.lineTo(boxX, boxY + boxH);
-        sceneCtx.lineTo(boxX + bLen, boxY + boxH);
-        sceneCtx.stroke();
-
-        // Sağ Alt (┘)
-        sceneCtx.beginPath();
-        sceneCtx.moveTo(boxX + boxW - bLen, boxY + boxH);
-        sceneCtx.lineTo(boxX + boxW, boxY + boxH);
-        sceneCtx.lineTo(boxX + boxW, boxY + boxH - bLen);
-        sceneCtx.stroke();
-
-        sceneCtx.restore();
+        // 4 KÖŞE PARLAK KIRMIZI L-BRAKETLERİ
+        drawNeonBrackets(sceneCtx, boxX, boxY, boxW, boxH);
       }
 
       // --- THREE.JS WEBGL RENDER ---
@@ -1524,6 +1559,7 @@ export default function CRTTerminal() {
   return (
     <div className="crt-terminal-wrapper">
       <div className="crt-monitor-bezel" ref={mountRef} />
+      <span style={{ fontFamily: "VCR OSD Mono", position: "absolute", opacity: 0, pointerEvents: "none", top: -9999 }}>SWITCH</span>
     </div>
   );
 }

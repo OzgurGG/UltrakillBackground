@@ -1,5 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 
+@font-face {
+  font-family: 'VCR OSD Mono';
+  src: url('/fonts/VCR_OSD_MONO.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'VCR OST Mono';
+  src: url('/fonts/VCR_OSD_MONO.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
 html,
 body,
 #root {
