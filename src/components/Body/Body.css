@@ -24,16 +24,15 @@
   pointer-events: auto;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end; /* Sağ bölüme hizalama */
+  padding-right: 28px;
+  box-sizing: border-box;
 }
 
-/* Ekranın ortasına yerleştirilen kare panel kapsayıcısı */
+/* Sağ bölüme yerleştirilen panel kapsayıcısı */
 .corner-panel-container,
 .center-panel-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  position: relative;
   z-index: 30;
   display: flex;
   align-items: center;
