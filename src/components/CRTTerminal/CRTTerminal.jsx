@@ -71,6 +71,59 @@ const fragmentShader = `
   }
 `;
 
+// İkonik Monolog & Diyalog Kaynağı (Kullanıcının Eski Dosyalarından)
+const PEPSI_DIALOGUE_SRC = [
+  { type: "narrate", msg: "I was staring at the screen.", delay: 150 },
+  { type: "narrate", msg: "looking at the code, thinking about everything.", delay: 120 },
+  { type: "narrate", msg: "but then again, thinking about nothing.", delay: 150 },
+  { type: "narrate", msg: "and then the system prompted, and {user} didn't even notice.", delay: 120 },
+  { type: "narrate", msg: "it requested input and {user} didn't type.", delay: 120 },
+  { type: "narrate", msg: "and then the kernel started throwing errors:", delay: 150 },
+  { type: "system", msg: "INPUT_REQUIRED! {USER}!", delay: 250 },
+  { type: "narrate", msg: "and {user} goes:", delay: 100 },
+  { type: "user", msg: "What? What's the matter?", delay: 150 },
+  { type: "narrate", msg: "the system goes:", delay: 80 },
+  { type: "system", msg: "IDLE_TIMEOUT. What's the matter with you?", delay: 150 },
+  { type: "narrate", msg: "{user} typed:", delay: 80 },
+  { type: "user", msg: "Nothing, I'm okay. I'm just thinking you know?", delay: 120 },
+  { type: "user", msg: "Why don't you fetch me a Pepsi?", delay: 150 },
+  { type: "narrate", msg: "the system goes:", delay: 80 },
+  { type: "system", msg: "ERR_UNKNOWN_COMMAND! You're compromised!", delay: 200 },
+  { type: "narrate", msg: "{user} goes:", delay: 80 },
+  { type: "user", msg: "No, my code is clean, I'm not compromised,", delay: 100 },
+  { type: "user", msg: "I'm just thinking, so why don't you fetch me a Pepsi?", delay: 120 },
+  { type: "narrate", msg: "and the system goes:", delay: 80 },
+  { type: "system", msg: "ACCESS_DENIED! You're crazy!", delay: 200 },
+  { type: "narrate", msg: "all {user} wanted was a Pepsi.", delay: 300 },
+  { type: "narrate", msg: "just one Pepsi.", delay: 350 },
+  { type: "narrate", msg: "and the machine wouldn't give it to them.", delay: 300 },
+  { type: "narrate", msg: "just one Pepsi.", delay: 400 },
+];
+
+function buildPepsiDialogue(username) {
+  const u = username || "ozgur";
+  const U = u.toUpperCase();
+  return PEPSI_DIALOGUE_SRC.map((item) => {
+    let raw = item.msg.replace(/\{user\}/g, u).replace(/\{USER\}/g, U);
+    let line = raw;
+    if (item.type === 'narrate') {
+      line = `:: ${raw}`;
+    } else if (item.type === 'user') {
+      line = `> ${raw}`;
+    } else if (item.type === 'system') {
+      if (raw.startsWith('INPUT_REQUIRED') || raw.startsWith('ERR_') || raw.startsWith('ACCESS_')) {
+        line = `█ ${raw} █`;
+      } else {
+        line = `⚠️ [SYS] ${raw}`;
+      }
+    }
+    return {
+      text: line,
+      delay: item.delay
+    };
+  });
+}
+
 // Onlarca Farklı Teknik ve Karışık Akış: Gerçek JS, Hex Dökümleri, Hatalar, Git Diffleri, Gauges, Şemalar, Disasm, Bitstream, Audio DSP, Telemetri
 const SCRIPT_EVENTS = [
   // 1. Teknik: Gerçek JavaScript Fonksiyonu (Nizamî Tab Girintili)
@@ -98,6 +151,11 @@ const SCRIPT_EVENTS = [
       "  return grid;",
       "};"
     ]
+  },
+  // 2. Teknik: İkonik Pepsi & Sistem Monoloğu / Diyaloğu (Narrative Soliloquy)
+  {
+    mode: 'dialogue',
+    getLines: (uName) => buildPepsiDialogue(uName)
   },
   // 2. Teknik: Canlı Hexadecimal Bellek Dökümü (Binary Memory Inspector)
   {
@@ -380,6 +438,49 @@ const SCRAMBLE_CHARS = '!@#$%^&*<>[]{}0123456789ABCDEFλΩΞ';
 
 function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
   const trimmed = text.trim();
+
+  // 0. NOSTALJİK ANLATI / NARRATIVE SATIRLARI (:: ...)
+  if (trimmed.startsWith('::')) {
+    ctx.font = 'italic 10.5px "Share Tech Mono", monospace';
+    ctx.fillStyle = 'rgba(0, 240, 255, 0.75)';
+    ctx.fillText(':: ', x, y);
+    const nx = x + ctx.measureText(':: ').width;
+
+    if (trimmed.includes('Pepsi')) {
+      // "all ozgur wanted was a Pepsi... just one Pepsi" satırlarında nostaljik kehribar parlaması
+      ctx.fillStyle = '#ffbb55';
+      ctx.shadowColor = 'rgba(255, 187, 85, 0.6)';
+      ctx.shadowBlur = 6;
+    } else {
+      ctx.fillStyle = 'rgba(225, 240, 255, 0.92)';
+      ctx.shadowBlur = 0;
+    }
+    ctx.fillText(text.replace(/^::\s*/, ''), nx, y);
+    ctx.shadowBlur = 0;
+    if (isTyping) {
+      const curX = nx + ctx.measureText(text.replace(/^::\s*/, '')).width;
+      ctx.fillStyle = trimmed.includes('Pepsi') ? '#ffbb55' : '#00f0ff';
+      ctx.fillRect(curX + 2, y - 9, 6, 12);
+    }
+    return;
+  }
+
+  // 0.5 KULLANICI DİYALOG / KOMUT İSTEMİ (> ...)
+  if (trimmed.startsWith('>') && !trimmed.startsWith('>>>')) {
+    ctx.font = 'bold 11px "Share Tech Mono", monospace';
+    ctx.fillStyle = '#39ff14';
+    ctx.fillText('> ', x, y);
+    const ux = x + ctx.measureText('> ').width;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '11px "Share Tech Mono", monospace';
+    ctx.fillText(text.replace(/^>\s*/, ''), ux, y);
+    if (isTyping) {
+      const curX = ux + ctx.measureText(text.replace(/^>\s*/, '')).width;
+      ctx.fillStyle = '#39ff14';
+      ctx.fillRect(curX + 2, y - 9, 6, 12);
+    }
+    return;
+  }
 
   // 1. TERS RENKLİ VURGU BANNERLARI (█ ...)
   if (trimmed.startsWith('█')) {
@@ -736,7 +837,8 @@ export default function CRTTerminal() {
     avatarUrl: "https://cdn.discordapp.com/embed/avatars/0.png",
     status: "offline",
     musicText: null,
-    spotify: null
+    spotify: null,
+    username: "ozgur"
   });
 
   const profilRef = useRef(profil);
@@ -872,7 +974,9 @@ export default function CRTTerminal() {
 
       // Dinamik Kod, Hata ve Burst Akış Güncellemesi
       const currentEvt = SCRIPT_EVENTS[typeState.eventIdx];
-      const currentLines = currentEvt.lines;
+      const uName = profilRef.current?.username || "ozgur";
+      const dialogueItems = currentEvt.mode === 'dialogue' ? currentEvt.getLines(uName) : null;
+      const currentLines = dialogueItems ? dialogueItems.map(d => d.text) : currentEvt.lines;
 
       if (now >= typeState.pauseUntil) {
         if (currentEvt.mode === 'burst') {
@@ -923,6 +1027,27 @@ export default function CRTTerminal() {
               typeState.eventIdx = (typeState.eventIdx + 1) % SCRIPT_EVENTS.length;
             } else {
               typeState.pauseUntil = now + 40;
+            }
+          }
+        } else if (currentEvt.mode === 'dialogue') {
+          // İKONİK DİYALOG & MONOLOG MODU: Karakter bazlı doğal daktilo ve ritmik duraklamalar
+          const item = dialogueItems[typeState.lineIdx] || { text: '', delay: 120 };
+          const currentLine = item.text;
+
+          typeState.charIdx = Math.min(currentLine.length, typeState.charIdx + 3);
+
+          if (typeState.charIdx >= currentLine.length) {
+            typeState.completedLines.push(currentLine);
+            typeState.lineIdx++;
+            typeState.charIdx = 0;
+
+            if (typeState.lineIdx >= dialogueItems.length) {
+              typeState.pauseUntil = now + 2800; // Monolog bitiminde 2.8s derin sessizlik
+              typeState.lineIdx = 0;
+              typeState.eventIdx = (typeState.eventIdx + 1) % SCRIPT_EVENTS.length;
+            } else {
+              // Dosyadaki delay değerine göre duygusal ve ritmik duraklama
+              typeState.pauseUntil = now + Math.max(70, Math.min(700, item.delay * 2));
             }
           }
         } else {
@@ -1134,7 +1259,7 @@ export default function CRTTerminal() {
         const linesToRender = [...typeState.completedLines];
         if (typeState.lineIdx < currentLines.length) {
           const fullLine = currentLines[typeState.lineIdx];
-          if (currentEvt.mode === 'type') {
+          if (currentEvt.mode === 'type' || currentEvt.mode === 'dialogue') {
             linesToRender.push(fullLine.slice(0, typeState.charIdx));
           } else if (currentEvt.mode === 'scramble') {
             let scrambledTail = '';
@@ -1153,7 +1278,7 @@ export default function CRTTerminal() {
         sceneCtx.save();
         visibleLines.forEach((text, li) => {
           const lY = termY + li * lineH + 10;
-          const isCurrent = (li === visibleLines.length - 1 && (currentEvt.mode === 'type' || currentEvt.mode === 'scramble'));
+          const isCurrent = (li === visibleLines.length - 1 && (currentEvt.mode === 'type' || currentEvt.mode === 'scramble' || currentEvt.mode === 'dialogue'));
           renderCodeLine(sceneCtx, text, termX, lY, isCurrent, now, termW);
         });
         sceneCtx.restore();

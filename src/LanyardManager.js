@@ -66,6 +66,8 @@ export class LanyardManager {
       };
     }
 
-    return { avatarUrl, status, musicText, spotify };
+    const username = user.global_name || user.username || "ozgur";
+
+    return { avatarUrl, status, musicText, spotify, username };
   }
 }
