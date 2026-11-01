@@ -136,6 +136,10 @@ export default function CRTTerminal() {
     avatarImg.crossOrigin = 'anonymous';
     avatarImg.src = profilRef.current.avatarUrl;
 
+    // Vitruvian V1 Çizimi (Şeffaf zemin, beyaz çizgili)
+    const vitruvianImg = new Image();
+    vitruvianImg.src = '/vitruvian-v1-white.png';
+
     // 4. Three.js Sahnesi ve WebGL Renderer
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -301,7 +305,23 @@ export default function CRTTerminal() {
       // C. BODY ALANI: PathDrops Labirenti (Tüm ekrana yayılır)
       sceneCtx.drawImage(mazeCanvas, 0, HEADER_HEIGHT, width, Math.max(10, height - HEADER_HEIGHT));
 
-      // D. KÖŞEYE KARE PANEL (CYBERPUNK RETICLE CARD)
+      // D. VITRUVIAN V1 (Arka plansız, beyaz çizgiler & yumuşak diffuse ışık yayılımı)
+      if (vitruvianImg.complete && vitruvianImg.naturalWidth > 0) {
+        const bodyH = Math.max(10, height - HEADER_HEIGHT);
+        const vSize = Math.min(width * 0.70, bodyH * 0.86, 620);
+        const vX = (width - vSize) / 2;
+        const vY = HEADER_HEIGHT + (bodyH - vSize) / 2;
+
+        sceneCtx.save();
+        // Diffuse parıltısı: Fosforlu tüp camında yumuşak beyaz ışık yayılımı
+        sceneCtx.shadowColor = 'rgba(255, 255, 255, 0.45)';
+        sceneCtx.shadowBlur = 10;
+        sceneCtx.globalAlpha = 0.90;
+        sceneCtx.drawImage(vitruvianImg, vX, vY, vSize, vSize);
+        sceneCtx.restore();
+      }
+
+      // E. KÖŞEYE KARE PANEL (CYBERPUNK RETICLE CARD)
       const cardSize = Math.min(300, Math.min(width - 48, height - HEADER_HEIGHT - 48));
       if (cardSize > 120) {
         const cardX = width - cardSize - 32;

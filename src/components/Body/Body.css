@@ -16,6 +16,18 @@
   pointer-events: none;
 }
 
+.body-centerpiece {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .body-content {
   position: relative;
   z-index: 10;
