@@ -71,93 +71,168 @@ const fragmentShader = `
   }
 `;
 
-// Gerçek, temiz JavaScript kod blokları (Labirent, CultStream, CRT Shader, V1 Kernel)
-const CODE_SNIPPETS = [
-  [
-    "// --- [ENGINE] RECURSIVE BACKTRACKER MAZE ---",
-    "const generateMaze = (grid, width, height) => {",
-    "  const stack = [[0, 0]];",
-    "  grid[0][0].visited = true;",
-    "",
-    "  while (stack.length > 0) {",
-    "    const [cx, cy] = stack[stack.length - 1];",
-    "    const neighbors = getUnvisited(grid, cx, cy);",
-    "",
-    "    if (neighbors.length > 0) {",
-    "      const [nx, ny, dir] = pickRandom(neighbors);",
-    "      removeWall(grid[cy][cx], dir);",
-    "      grid[ny][nx].visited = true;",
-    "      stack.push([nx, ny]);",
-    "    } else {",
-    "      stack.pop();",
-    "    }",
-    "  }",
-    "  return grid;",
-    "};"
-  ],
-  [
-    "// --- [STREAM] CULT_STREAM GLYPH PROCESSOR ---",
-    "async function pipeStreamBuffer(streamReader) {",
-    "  const buffer = new Uint8Array(2048);",
-    "  let offset = 0;",
-    "",
-    "  try {",
-    "    while (true) {",
-    "      const { done, value } = await streamReader.read();",
-    "      if (done) break;",
-    "",
-    "      for (let i = 0; i < value.length; i++) {",
-    "        const charCode = value[i];",
-    "        if (charCode >= 32 && charCode <= 126) {",
-    "          renderMatrixColumn(String.fromCharCode(charCode), offset);",
-    "        }",
-    "        offset = (offset + 1) % 64;",
-    "      }",
-    "    }",
-    "  } catch (err) {",
-    "    console.warn('StreamPipeline::Interrupted', err);",
-    "  }",
-    "}"
-  ],
-  [
-    "// --- [SHADER] CRT POST-PROCESSING COMPOSITE ---",
-    "const initCRTProgram = (gl, vertCode, fragCode) => {",
-    "  const program = gl.createProgram();",
-    "  const vs = compileShader(gl, gl.VERTEX_SHADER, vertCode);",
-    "  const fs = compileShader(gl, gl.FRAGMENT_SHADER, fragCode);",
-    "",
-    "  gl.attachShader(program, vs);",
-    "  gl.attachShader(program, fs);",
-    "  gl.linkProgram(program);",
-    "",
-    "  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {",
-    "    const info = gl.getProgramInfoLog(program);",
-    "    throw new Error(`ShaderLinkFailure: ${info}`);",
-    "  }",
-    "  return program;",
-    "};"
-  ],
-  [
-    "// --- [KERNEL] V1 SUBSYSTEM EVENT DISPATCHER ---",
-    "class V1SubsystemKernel extends EventTarget {",
-    "  constructor(config = {}) {",
-    "    super();",
-    "    this.state = 'ONLINE';",
-    "    this.fuelIntake = 1.0;",
-    "  }",
-    "",
-    "  dispatchAction(actionType, payload) {",
-    "    if (this.state !== 'ONLINE') return;",
-    "    const event = new CustomEvent(actionType, {",
-    "      detail: {",
-    "        timestamp: performance.now(),",
-    "        data: payload",
-    "      }",
-    "    });",
-    "    this.dispatchEvent(event);",
-    "  }",
-    "}"
-  ]
+// Dinamik Kod, Hata ve Konsol Olay Akışları (Typewriter, Hata Crash ve Burst Dökümleri)
+const SCRIPT_EVENTS = [
+  // 1. Temiz JavaScript Fonksiyonu (Girintili Labirent Oluşturucu)
+  {
+    mode: 'type',
+    lines: [
+      "// --- [ENGINE] RECURSIVE BACKTRACKER MAZE ---",
+      "const generateMaze = (grid, width, height) => {",
+      "  const stack = [[0, 0]];",
+      "  grid[0][0].visited = true;",
+      "",
+      "  while (stack.length > 0) {",
+      "    const [cx, cy] = stack[stack.length - 1];",
+      "    const neighbors = getUnvisited(grid, cx, cy);",
+      "",
+      "    if (neighbors.length > 0) {",
+      "      const [nx, ny, dir] = pickRandom(neighbors);",
+      "      removeWall(grid[cy][cx], dir);",
+      "      grid[ny][nx].visited = true;",
+      "      stack.push([nx, ny]);",
+      "    } else {",
+      "      stack.pop();",
+      "    }",
+      "  }",
+      "  return grid;",
+      "};"
+    ]
+  },
+  // 2. Beklenmedik Runtime Hatası ve Stack Trace ("bazı yazılar hata versin")
+  {
+    mode: 'error',
+    lines: [
+      "Uncaught TypeError: Cannot read properties of undefined (reading 'visited')",
+      "  at carveMaze (PathDrops.jsx:420:19)",
+      "  at runGenerationLoop (PathDrops.jsx:112:5)",
+      "  at HTMLCanvasElement.<anonymous> (CRTTerminal.jsx:325:18)",
+      "[FATAL] Memory corruption detected at grid[cy][cx]",
+      "⚠️ [WARN] Watchdog restarting corrupted worker thread..."
+    ]
+  },
+  // 3. Hızlı Konsol / Build Dökümü ("bazen bunch of codes ekrana atılsın")
+  {
+    mode: 'burst',
+    lines: [
+      "$ vite build --mode production",
+      "vite v6.4.5 building for production...",
+      "transforming (38) modules...",
+      "✓ 38 modules transformed in 184ms",
+      "dist/assets/index-CrYYBDTP.js   775.5 kB │ gzip: 211.4 kB",
+      "✓ built successfully in 2.14s"
+    ]
+  },
+  // 4. CultStream Asenkron Veri Akış Fonksiyonu
+  {
+    mode: 'type',
+    lines: [
+      "// --- [STREAM] CULT_STREAM GLYPH PROCESSOR ---",
+      "async function pipeStreamBuffer(streamReader) {",
+      "  const buffer = new Uint8Array(2048);",
+      "  let offset = 0;",
+      "",
+      "  try {",
+      "    while (true) {",
+      "      const { done, value } = await streamReader.read();",
+      "      if (done) break;",
+      "",
+      "      for (let i = 0; i < value.length; i++) {",
+      "        const charCode = value[i];",
+      "        if (charCode >= 32 && charCode <= 126) {",
+      "          renderMatrixColumn(String.fromCharCode(charCode), offset);",
+      "        }",
+      "        offset = (offset + 1) % 64;",
+      "      }",
+      "    }",
+      "  } catch (err) {",
+      "    console.warn('StreamPipeline::Interrupted', err);",
+      "  }",
+      "}"
+    ]
+  },
+  // 5. Bellek Heap ve Garbage Collection Burst Dökümü
+  {
+    mode: 'burst',
+    lines: [
+      "[HEAP_ALLOC] 0x7FFF5FBFF840 :: PAGE_SIZE=4096B [OK]",
+      "[V8::GC] Scavenge 24.2MB (32.0MB) -> 18.4MB (32.0MB) [0.82ms]",
+      "[NET] WebSocket connected: wss://switch.dev/cultstream",
+      "{\"status\": 200, \"ack\": true, \"latency_ms\": 14.2}",
+      "[STREAM_POLL] Chunk 0x8F4A ingested -> 128 bytes flushed"
+    ]
+  },
+  // 6. JSON / Sözdizimi Hatası ve Kurtarma ("bazı yazılar hata versin")
+  {
+    mode: 'error',
+    lines: [
+      "SyntaxError: Unexpected token '?' in JSON at position 148",
+      "  at JSON.parse (<anonymous>)",
+      "  at parseTelemetryStream (CultStream.jsx:88:22)",
+      "  at WebSocket.onmessage (CRTTerminal.jsx:194:12)",
+      "⚠️ [WARN] Dropping malformed telemetry packet [CRC: 0x9AF0]",
+      "✓ Stream pipeline recovered. Resuming normal loop..."
+    ]
+  },
+  // 7. WebGL CRT Shader Derleyici Fonksiyonu
+  {
+    mode: 'type',
+    lines: [
+      "// --- [SHADER] CRT POST-PROCESSING COMPOSITE ---",
+      "const initCRTProgram = (gl, vertCode, fragCode) => {",
+      "  const program = gl.createProgram();",
+      "  const vs = compileShader(gl, gl.VERTEX_SHADER, vertCode);",
+      "  const fs = compileShader(gl, gl.FRAGMENT_SHADER, fragCode);",
+      "",
+      "  gl.attachShader(program, vs);",
+      "  gl.attachShader(program, fs);",
+      "  gl.linkProgram(program);",
+      "",
+      "  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {",
+      "    const info = gl.getProgramInfoLog(program);",
+      "    throw new Error(`ShaderLinkFailure: ${info}`);",
+      "  }",
+      "  return program;",
+      "};"
+    ]
+  },
+  // 8. Test ve Sistem Çekirdek Burst Dökümü
+  {
+    mode: 'burst',
+    lines: [
+      "$ bun test --coverage --silent",
+      "PASS test/maze_backtracker.test.js (6 tests, 6 passed)",
+      "PASS test/cult_stream.test.js (12 tests, 12 passed)",
+      "PASS test/crt_curvature.test.js (4 tests, 4 passed)",
+      "✓ 22 tests passed in 48ms",
+      "[SYS] Kernel state synchronized :: V1_READY"
+    ]
+  },
+  // 9. V1 Alt Sistem Olay Çekirdeği Sınıfı
+  {
+    mode: 'type',
+    lines: [
+      "// --- [KERNEL] V1 SUBSYSTEM EVENT DISPATCHER ---",
+      "class V1SubsystemKernel extends EventTarget {",
+      "  constructor(config = {}) {",
+      "    super();",
+      "    this.state = 'ONLINE';",
+      "    this.fuelIntake = 1.0;",
+      "  }",
+      "",
+      "  dispatchAction(actionType, payload) {",
+      "    if (this.state !== 'ONLINE') return;",
+      "    const event = new CustomEvent(actionType, {",
+      "      detail: {",
+      "        timestamp: performance.now(),",
+      "        data: payload",
+      "      }",
+      "    });",
+      "    this.dispatchEvent(event);",
+      "  }",
+      "}"
+    ]
+  }
 ];
 
 const JS_KEYWORDS = new Set([
@@ -167,7 +242,65 @@ const JS_KEYWORDS = new Set([
 ]);
 
 function renderCodeLine(ctx, text, x, y, isTyping, now) {
-  if (text.trim().startsWith('//')) {
+  const trimmed = text.trim();
+
+  // 1. HATA SATIRLARI (Kırmızı vurgulu, stack trace veya fatal crash)
+  if (
+    trimmed.startsWith('Uncaught') ||
+    trimmed.startsWith('TypeError') ||
+    trimmed.startsWith('SyntaxError') ||
+    trimmed.startsWith('RangeError') ||
+    trimmed.startsWith('Error:') ||
+    trimmed.startsWith('[FATAL]') ||
+    trimmed.startsWith('[PANIC]')
+  ) {
+    ctx.fillStyle = '#ff2233';
+    ctx.font = 'bold 11px "Share Tech Mono", monospace';
+    ctx.shadowColor = 'rgba(255, 34, 51, 0.7)';
+    ctx.shadowBlur = 6;
+    ctx.fillText(text, x, y);
+    ctx.shadowBlur = 0;
+    return;
+  }
+
+  // 2. STACK TRACE SATIRLARI ("  at ...")
+  if (trimmed.startsWith('at ') || text.startsWith('  at ')) {
+    ctx.fillStyle = 'rgba(255, 130, 130, 0.82)';
+    ctx.font = '10.5px "Share Tech Mono", monospace';
+    ctx.fillText(text, x, y);
+    return;
+  }
+
+  // 3. UYARI SATIRLARI (⚠️, [WARN], Warning:)
+  if (trimmed.startsWith('⚠️') || trimmed.startsWith('[WARN]') || trimmed.startsWith('Warning:')) {
+    ctx.fillStyle = '#ffaa00';
+    ctx.font = 'bold 11px "Share Tech Mono", monospace';
+    ctx.fillText(text, x, y);
+    return;
+  }
+
+  // 4. BAŞARI / TEST SATIRLARI (✓, PASS)
+  if (trimmed.startsWith('✓') || trimmed.startsWith('PASS')) {
+    ctx.fillStyle = '#39ff14';
+    ctx.font = 'bold 11px "Share Tech Mono", monospace';
+    ctx.fillText(text, x, y);
+    return;
+  }
+
+  // 5. SHELL KOMUTLARI ($ ...)
+  if (trimmed.startsWith('$')) {
+    ctx.fillStyle = '#00f0ff';
+    ctx.font = 'bold 11px "Share Tech Mono", monospace';
+    ctx.fillText('$ ', x, y);
+    const cmdX = x + ctx.measureText('$ ').width;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '11px "Share Tech Mono", monospace';
+    ctx.fillText(text.replace(/^\$\s*/, ''), cmdX, y);
+    return;
+  }
+
+  // 6. YORUM SATIRLARI (// ...)
+  if (trimmed.startsWith('//')) {
     ctx.fillStyle = 'rgba(0, 240, 255, 0.45)';
     ctx.font = '11px "Share Tech Mono", monospace';
     ctx.fillText(text, x, y);
@@ -179,6 +312,22 @@ function renderCodeLine(ctx, text, x, y, isTyping, now) {
     return;
   }
 
+  // 7. TELEMETRİ / JSON / HEAP SATIRLARI
+  if (
+    trimmed.startsWith('{') ||
+    trimmed.startsWith('[HEAP') ||
+    trimmed.startsWith('[V8') ||
+    trimmed.startsWith('[NET') ||
+    trimmed.startsWith('[STREAM') ||
+    trimmed.startsWith('[SYS]')
+  ) {
+    ctx.fillStyle = 'rgba(160, 230, 255, 0.85)';
+    ctx.font = '10.5px "Share Tech Mono", monospace';
+    ctx.fillText(text, x, y);
+    return;
+  }
+
+  // 8. STANDART JAVASCRIPT KODLARI (Sözdizimi renklendirmesi + tab girintisi)
   const tokens = text.split(/([a-zA-Z0-9_$]+|'[^']*'|"[^"]*"|`[^`]*`|\s+|[^\s\w])/g);
   let curX = x;
 
@@ -343,9 +492,9 @@ export default function CRTTerminal() {
     // 5. Ana Çizim & Bükme Döngüsü (60 FPS)
     let rafId;
 
-    // JavaScript Typewriter Motor Durumu
+    // Dinamik Kod & Hata Motor Durumu
     const typeState = {
-      snippetIdx: 0,
+      eventIdx: 0,
       lineIdx: 0,
       charIdx: 0,
       completedLines: [],
@@ -359,38 +508,69 @@ export default function CRTTerminal() {
         avatarImg.src = p.avatarUrl;
       }
 
-      // Typewriter Hızlı Kod Akış Güncellemesi
-      const currentSnippet = CODE_SNIPPETS[typeState.snippetIdx];
-      const currentLine = currentSnippet[typeState.lineIdx] || '';
+      // Dinamik Kod, Hata ve Burst Akış Güncellemesi
+      const currentEvt = SCRIPT_EVENTS[typeState.eventIdx];
+      const currentLines = currentEvt.lines;
 
       if (now >= typeState.pauseUntil) {
-        // Satır başındaki tab/boşluk girintilerini anında tüket ve koda başla
-        if (typeState.charIdx === 0) {
-          const firstNonSpace = currentLine.search(/\S|$/);
-          typeState.charIdx = firstNonSpace;
+        if (currentEvt.mode === 'burst') {
+          // BUNCH OF CODES: Bir anda 3-5 satır birden ekrana atılır!
+          const burstSize = Math.min(currentLines.length - typeState.lineIdx, 3 + Math.floor(Math.random() * 2));
+          for (let b = 0; b < burstSize; b++) {
+            typeState.completedLines.push(currentLines[typeState.lineIdx]);
+            typeState.lineIdx++;
+          }
+          if (typeState.lineIdx >= currentLines.length) {
+            typeState.pauseUntil = now + 900;
+            typeState.lineIdx = 0;
+            typeState.charIdx = 0;
+            typeState.eventIdx = (typeState.eventIdx + 1) % SCRIPT_EVENTS.length;
+          } else {
+            typeState.pauseUntil = now + 40; // Çok hızlı peş peşe burst
+          }
+        } else if (currentEvt.mode === 'error') {
+          // HATA MODU: Kırmızı hata satırları dökülür, stack trace basılır
+          const errLine = currentLines[typeState.lineIdx] || '';
+          typeState.completedLines.push(errLine);
+          typeState.lineIdx++;
+          if (typeState.lineIdx >= currentLines.length) {
+            typeState.pauseUntil = now + 1600; // Hatanın ekranda okunabilmesi için 1.6s durakla
+            typeState.lineIdx = 0;
+            typeState.charIdx = 0;
+            typeState.eventIdx = (typeState.eventIdx + 1) % SCRIPT_EVENTS.length;
+          } else {
+            typeState.pauseUntil = now + 90; // Hata satırları hızlıca düşer
+          }
+        } else {
+          // STANDART TYPEWRITER MODU: Hızlı daktilo (tab girintisi anında atlanır)
+          const currentLine = currentLines[typeState.lineIdx] || '';
+
+          if (typeState.charIdx === 0) {
+            const firstNonSpace = currentLine.search(/\S|$/);
+            typeState.charIdx = firstNonSpace;
+          }
+
+          // Satır içi hızlı yazma hızı (her karede 3 karakter)
+          typeState.charIdx = Math.min(currentLine.length, typeState.charIdx + 3);
+
+          if (typeState.charIdx >= currentLine.length) {
+            typeState.completedLines.push(currentLine);
+            typeState.lineIdx++;
+            typeState.charIdx = 0;
+
+            if (typeState.lineIdx >= currentLines.length) {
+              typeState.pauseUntil = now + 1300;
+              typeState.lineIdx = 0;
+              typeState.eventIdx = (typeState.eventIdx + 1) % SCRIPT_EVENTS.length;
+            } else {
+              typeState.pauseUntil = now + 45;
+            }
+          }
         }
 
-        // Hızlı yazma: her karede 3 karakter ilerle (satır 0.15-0.25 saniyede tamamlanır)
-        typeState.charIdx = Math.min(currentLine.length, typeState.charIdx + 3);
-
-        if (typeState.charIdx >= currentLine.length) {
-          // Satır tamamlandı
-          typeState.completedLines.push(currentLine);
-          typeState.lineIdx++;
-          typeState.charIdx = 0;
-
-          if (typeState.lineIdx >= currentSnippet.length) {
-            // Fonksiyon tamamlandı: 1.5 saniye durakla
-            typeState.pauseUntil = now + 1500;
-            typeState.lineIdx = 0;
-            typeState.snippetIdx = (typeState.snippetIdx + 1) % CODE_SNIPPETS.length;
-            if (typeState.completedLines.length > 60) {
-              typeState.completedLines = typeState.completedLines.slice(-30);
-            }
-          } else {
-            // Satırlar arası ufak nefes alma süresi (~50ms)
-            typeState.pauseUntil = now + 50;
-          }
+        // Buffer sınırını koru
+        if (typeState.completedLines.length > 70) {
+          typeState.completedLines = typeState.completedLines.slice(-35);
         }
       }
 
@@ -512,28 +692,44 @@ export default function CRTTerminal() {
       const boxY = HEADER_HEIGHT + padY;
 
       if (boxW > 100 && boxH > 100) {
-        // 1. Panel Zemin (Derin saf siyah cam zemin)
-        sceneCtx.fillStyle = 'rgba(2, 2, 6, 0.94)';
-        sceneCtx.fillRect(boxX, boxY, boxW, boxH);
-
-        // 2. KARENİN İÇİNE TAM EKRAN FİLTRE (Aperture Grille, Scanline, Cam Vignette)
         sceneCtx.save();
         sceneCtx.beginPath();
         sceneCtx.rect(boxX, boxY, boxW, boxH);
         sceneCtx.clip();
 
-        // Cam Köşe Vignette (İçbükey derinlik gölgesi)
+        // 1. BUZLU CAM / BLUR EFEKTİ (Arka plandaki mazeCanvas kutu içinde buzlu cam gibi bulanıklaşır)
+        // Kullanıcı isteği: "arka plandaki siyah katmanı kaldır en arkaplan gözüksün. yada cam gibi böyle blurlşu bişey yap o daha iyi."
+        sceneCtx.save();
+        sceneCtx.filter = 'blur(6px) brightness(0.65)';
+        sceneCtx.drawImage(
+          mazeCanvas,
+          boxX, boxY - HEADER_HEIGHT, boxW, boxH,
+          boxX, boxY, boxW, boxH
+        );
+        sceneCtx.restore();
+
+        // 2. YARI SAYDAM FÜME CAM TINT & VIGNETTE (Arka planı tamamen karartmaz, cam derinliği verir)
+        sceneCtx.fillStyle = 'rgba(4, 8, 16, 0.52)';
+        sceneCtx.fillRect(boxX, boxY, boxW, boxH);
+
         const vigGrad = sceneCtx.createRadialGradient(
           boxX + boxW / 2, boxY + boxH / 2, boxH * 0.25,
           boxX + boxW / 2, boxY + boxH / 2, boxH * 0.75
         );
         vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-        vigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.82)');
+        vigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.65)');
         sceneCtx.fillStyle = vigGrad;
         sceneCtx.fillRect(boxX, boxY, boxW, boxH);
 
-        // Yatay Scanlines ve Dikey Izgara (Trinitron fosfor ağı)
-        sceneCtx.fillStyle = 'rgba(0, 0, 0, 0.26)';
+        // Üst kenar cam parlaması
+        const specGrad = sceneCtx.createLinearGradient(boxX, boxY, boxX, boxY + 28);
+        specGrad.addColorStop(0, 'rgba(0, 240, 255, 0.12)');
+        specGrad.addColorStop(1, 'rgba(0, 240, 255, 0)');
+        sceneCtx.fillStyle = specGrad;
+        sceneCtx.fillRect(boxX, boxY, boxW, 28);
+
+        // İnce Trinitron fosfor ağı / scanlines
+        sceneCtx.fillStyle = 'rgba(0, 0, 0, 0.22)';
         for (let y = boxY; y < boxY + boxH; y += 3) {
           sceneCtx.fillRect(boxX, y, boxW, 1.2);
         }
@@ -541,7 +737,7 @@ export default function CRTTerminal() {
           sceneCtx.fillRect(x, boxY, 1.2, boxH);
         }
 
-        // 3. JAVASCRIPT TYPEWRITER KOD TERMİNALİ (Hızlı akan, tab girintili gerçek JS)
+        // 3. JAVASCRIPT TYPEWRITER & BURST KOD TERMİNALİ (Hızlı akan, tab girintili, hatalar ve dökümler içeren)
         const termPadX = 16;
         const termPadY = 18;
         const termX = boxX + termPadX;
@@ -551,8 +747,8 @@ export default function CRTTerminal() {
         const maxVisible = Math.floor(termH / lineH);
 
         const linesToRender = [...typeState.completedLines];
-        if (typeState.lineIdx < currentSnippet.length) {
-          linesToRender.push(currentLine.slice(0, typeState.charIdx));
+        if (currentEvt.mode === 'type' && typeState.lineIdx < currentLines.length) {
+          linesToRender.push(currentLines[typeState.lineIdx].slice(0, typeState.charIdx));
         }
 
         const startIdx = Math.max(0, linesToRender.length - maxVisible);
@@ -561,7 +757,7 @@ export default function CRTTerminal() {
         sceneCtx.save();
         visibleLines.forEach((text, li) => {
           const lY = termY + li * lineH + 10;
-          const isCurrent = (li === visibleLines.length - 1);
+          const isCurrent = (li === visibleLines.length - 1 && currentEvt.mode === 'type');
           renderCodeLine(sceneCtx, text, termX, lY, isCurrent, now);
         });
         sceneCtx.restore();
