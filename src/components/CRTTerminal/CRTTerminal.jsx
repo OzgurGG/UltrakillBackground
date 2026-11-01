@@ -139,7 +139,6 @@ export default function CRTTerminal() {
         uCurvature: { value: crtConfig.curvature },
         uPhosphorGrid: { value: crtConfig.phosphorGrid },
         uVignette: { value: crtConfig.vignette },
-        uBloom: { value: crtConfig.bloom },
       },
     });
 
@@ -559,7 +558,6 @@ export default function CRTTerminal() {
       material.uniforms.uCurvature.value = crtConfig.curvature;
       material.uniforms.uPhosphorGrid.value = crtConfig.phosphorGrid;
       material.uniforms.uVignette.value = crtConfig.vignette;
-      material.uniforms.uBloom.value = crtConfig.bloom;
       renderer.render(scene, camera);
 
       rafId = requestAnimationFrame(renderLoop);
