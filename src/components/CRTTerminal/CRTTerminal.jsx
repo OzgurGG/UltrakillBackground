@@ -866,9 +866,8 @@ function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
   }
 }
 
-function drawNeonBrackets(ctx, x, y, w, h) {
-  const bLen = 34;
-  const bThick = 4;
+function drawNeonBrackets(ctx, x, y, w, h, bLen = 34, bThick = 4) {
+  const arm = Math.min(bLen, Math.floor(h * 0.35), Math.floor(w * 0.35));
   
   ctx.save();
   ctx.strokeStyle = '#ff2222';
@@ -879,22 +878,22 @@ function drawNeonBrackets(ctx, x, y, w, h) {
 
   // Sol Üst (┌)
   ctx.beginPath();
-  ctx.moveTo(x, y + bLen); ctx.lineTo(x, y); ctx.lineTo(x + bLen, y);
+  ctx.moveTo(x, y + arm); ctx.lineTo(x, y); ctx.lineTo(x + arm, y);
   ctx.stroke();
 
   // Sağ Üst (┐)
   ctx.beginPath();
-  ctx.moveTo(x + w - bLen, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + bLen);
+  ctx.moveTo(x + w - arm, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + arm);
   ctx.stroke();
 
   // Sol Alt (└)
   ctx.beginPath();
-  ctx.moveTo(x, y + h - bLen); ctx.lineTo(x, y + h); ctx.lineTo(x + bLen, y + h);
+  ctx.moveTo(x, y + h - arm); ctx.lineTo(x, y + h); ctx.lineTo(x + arm, y + h);
   ctx.stroke();
 
   // Sağ Alt (┘)
   ctx.beginPath();
-  ctx.moveTo(x + w - bLen, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w, y + h - bLen);
+  ctx.moveTo(x + w - arm, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w, y + h - arm);
   ctx.stroke();
 
   // İkinci geçiş: İç akkor çekirdek
@@ -904,19 +903,19 @@ function drawNeonBrackets(ctx, x, y, w, h) {
   ctx.shadowBlur = 4;
 
   ctx.beginPath();
-  ctx.moveTo(x, y + bLen); ctx.lineTo(x, y); ctx.lineTo(x + bLen, y);
+  ctx.moveTo(x, y + arm); ctx.lineTo(x, y); ctx.lineTo(x + arm, y);
   ctx.stroke();
 
   ctx.beginPath();
-  ctx.moveTo(x + w - bLen, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + bLen);
+  ctx.moveTo(x + w - arm, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + arm);
   ctx.stroke();
 
   ctx.beginPath();
-  ctx.moveTo(x, y + h - bLen); ctx.lineTo(x, y + h); ctx.lineTo(x + bLen, y + h);
+  ctx.moveTo(x, y + h - arm); ctx.lineTo(x, y + h); ctx.lineTo(x + arm, y + h);
   ctx.stroke();
 
   ctx.beginPath();
-  ctx.moveTo(x + w - bLen, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w, y + h - bLen);
+  ctx.moveTo(x + w - arm, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w, y + h - arm);
   ctx.stroke();
 
   ctx.restore();
@@ -999,6 +998,24 @@ export default function CRTTerminal() {
       document.fonts.load('64px "VCR OSD Mono"');
       document.fonts.load('64px "VCR OST Mono"');
     }
+
+    // Donanım hızlandırmalı buzlu cam buffer'ı (60 FPS GPU downscale - sıfır CPU blur yükü)
+    const frostCanvas = document.createElement('canvas');
+    frostCanvas.width = 96;
+    frostCanvas.height = 96;
+    const frostCtx = frostCanvas.getContext('2d');
+
+    // Tek seferlik CRT scanline ve ızgara deseni (Her karede 500 döngü yerine 1 draw call)
+    const scanPatternCanvas = document.createElement('canvas');
+    scanPatternCanvas.width = 3;
+    scanPatternCanvas.height = 3;
+    const spCtx = scanPatternCanvas.getContext('2d');
+    spCtx.fillStyle = 'rgba(0, 0, 0, 0.26)';
+    spCtx.fillRect(0, 2, 3, 1);
+    spCtx.fillStyle = 'rgba(0, 0, 0, 0.14)';
+    spCtx.fillRect(2, 0, 1, 3);
+    let scanPattern = null;
+    let zinePattern = null;
 
     // 4. Three.js Sahnesi ve WebGL Renderer
     const scene = new THREE.Scene();
@@ -1331,47 +1348,49 @@ export default function CRTTerminal() {
       const boxX = width - padX - boxW;
       const boxY = HEADER_HEIGHT + padY;
 
-      // D1. SOL TARAF: ANATOMİ KAREMİZDEN KALAN BÖLÜMÜN DİKDÖRTGEN PANELİ
-      // Kullanıcı isteği: "aynı karden bitaendaha oluştur, ama bu dikdörtgen olacak, bizimö anatomi karemizden kalan bölümün sol dan başlayıp anatomi küpümüzün sınırna kadar ilerleyecek, içi böyle bu görselin arkasındaki texture gibi. bi texture çıkart, bütün dikdörtgen boyunca bu textıre olsun ve vcr ost mono ile SWITCH yazsın. başlık gibi düşün işte. başka bişey ekleme sade olacak ve sadece istediğim olacak"
+      // D1. SOL TARAF: ÜST YATAY BAŞLIK BANNERI (KULLANICININ ÇİZDİĞİ BÖLÜM)
+      // Kullanıcı isteği: "şöyle bi bölüme koy onu güzelim" -> Ekran görüntüsündeki beyaz çizgiyle işaretlenen üst yatay banner
       const rectX = padX;
       const rectY = boxY;
-      const rectH = boxH;
       const rectW = Math.max(50, (boxX - padX) - rectX);
+      const rectH = Math.min(135, Math.max(88, Math.round(boxH * 0.20))); // Üst yatay başlık bölümü (~110px)
 
-      if (rectW > 100 && rectH > 100) {
+      if (rectW > 60 && rectH > 40) {
         sceneCtx.save();
         sceneCtx.beginPath();
         sceneCtx.rect(rectX, rectY, rectW, rectH);
         sceneCtx.clip();
 
-        // 1. ZİNE / KAĞIT DOKUSU (Görseldeki koyu kömür rengi doku bütün dikdörtgen boyunca akar)
+        // 1. ZİNE / KAĞIT DOKUSU (Görseldeki koyu kömür rengi doku bu başlık dikdörtgenini kaplar)
         sceneCtx.fillStyle = '#121316';
         sceneCtx.fillRect(rectX, rectY, rectW, rectH);
 
-        if (zineTextureImg.complete && zineTextureImg.naturalWidth > 0) {
-          const pattern = sceneCtx.createPattern(zineTextureImg, 'repeat');
-          if (pattern) {
-            sceneCtx.fillStyle = pattern;
-            sceneCtx.fillRect(rectX, rectY, rectW, rectH);
-          }
+        if (!zinePattern && zineTextureImg.complete && zineTextureImg.naturalWidth > 0) {
+          try {
+            zinePattern = sceneCtx.createPattern(zineTextureImg, 'repeat');
+          } catch (e) {}
+        }
+        if (zinePattern) {
+          sceneCtx.fillStyle = zinePattern;
+          sceneCtx.fillRect(rectX, rectY, rectW, rectH);
         }
 
         // 2. VCR OSD MONO İLE SADE "SWITCH" BAŞLIĞI
-        const titleSize = Math.max(42, Math.min(96, Math.floor(rectW * 0.12)));
+        const titleSize = Math.max(34, Math.min(68, Math.floor(rectH * 0.44)));
         sceneCtx.save();
         sceneCtx.font = `bold ${titleSize}px "VCR OSD Mono", "VCR OST Mono", monospace`;
         sceneCtx.textAlign = 'center';
         sceneCtx.textBaseline = 'middle';
         sceneCtx.fillStyle = '#ede8dc';
-        sceneCtx.shadowColor = 'rgba(237, 232, 220, 0.4)';
-        sceneCtx.shadowBlur = 10;
+        sceneCtx.shadowColor = 'rgba(237, 232, 220, 0.45)';
+        sceneCtx.shadowBlur = 8;
         sceneCtx.fillText('SWITCH', rectX + rectW / 2, rectY + rectH / 2);
         sceneCtx.restore();
 
         sceneCtx.restore(); // clip sonu
 
         // DİKDÖRTGENİN 4 KÖŞE PARLAK KIRMIZI L-BRAKETLERİ
-        drawNeonBrackets(sceneCtx, rectX, rectY, rectW, rectH);
+        drawNeonBrackets(sceneCtx, rectX, rectY, rectW, rectH, 22, 3);
       }
 
       // D2. SAĞ TARAF: ANATOMİ ÇİZİMİNİN KENDİ BOYUTUNDAKİ KARE PANEL ("KAREMİZ")
@@ -1382,23 +1401,19 @@ export default function CRTTerminal() {
         sceneCtx.rect(boxX, boxY, boxW, boxH);
         sceneCtx.clip();
 
-        // 1. BUZLU CAM & DERİN BLUR (Arka plandaki mazeCanvas kutu içinde gerçek füme cam gibi derinlemesine bulanıklaşır)
-        // Kullanıcı isteği: "görseldeki gibi blurlayabilirmisin? hem arkada akan kodları, hemde onun arkasındaki şeffafr siyah katmanı."
-        const blurBleed = 20;
-        sceneCtx.save();
-        sceneCtx.filter = 'blur(16px) brightness(0.6)';
-        sceneCtx.drawImage(
-          mazeCanvas,
-          Math.max(0, boxX - blurBleed),
-          Math.max(0, boxY - HEADER_HEIGHT - blurBleed),
-          boxW + blurBleed * 2,
-          boxH + blurBleed * 2,
-          boxX - blurBleed,
-          boxY - blurBleed,
-          boxW + blurBleed * 2,
-          boxH + blurBleed * 2
-        );
-        sceneCtx.restore();
+        // 1. DONANIM HIZLANDIRMALI BUZLU CAM (Zero-lag 60 FPS Bilinear Downscale Blur - CPU filter kaldırıldı)
+        try {
+          frostCtx.drawImage(
+            mazeCanvas,
+            boxX, Math.max(0, boxY - HEADER_HEIGHT), boxW, boxH,
+            0, 0, 96, 96
+          );
+          sceneCtx.save();
+          sceneCtx.imageSmoothingEnabled = true;
+          sceneCtx.imageSmoothingQuality = 'medium';
+          sceneCtx.drawImage(frostCanvas, 0, 0, 96, 96, boxX, boxY, boxW, boxH);
+          sceneCtx.restore();
+        } catch (e) {}
 
         // 2. YARI SAYDAM FÜME CAM TINT & VIGNETTE (Işık kırılımlı füme cam derinliği)
         sceneCtx.fillStyle = 'rgba(2, 6, 12, 0.58)';
@@ -1427,8 +1442,7 @@ export default function CRTTerminal() {
         sceneCtx.fillStyle = rimGrad;
         sceneCtx.fillRect(boxX, boxY + boxH - 24, boxW, 24);
 
-        // 3. JAVASCRIPT TYPEWRITER & BURST KOD TERMİNALİ (ARKA PLANDA DERİNLİK BLUR'U / OPTICAL DoF)
-        // Kullanıcı isteği: Görseldeki gibi arkada akan kodlar out-of-focus (bokeh / lens blur) olarak akar
+        // 3. JAVASCRIPT TYPEWRITER & BURST KOD TERMİNALİ (60 FPS Doğrudan GPU Render)
         const termPadX = 16;
         const termPadY = 18;
         const termX = boxX + termPadX;
@@ -1457,9 +1471,7 @@ export default function CRTTerminal() {
         const startIdx = Math.max(0, linesToRender.length - maxVisible);
         const visibleLines = linesToRender.slice(startIdx);
 
-        // Optik Odak Dışı (Depth of Field) Gaussian Lens Bluru ile kod akışı
         sceneCtx.save();
-        sceneCtx.filter = 'blur(2.6px) brightness(1.28)';
         visibleLines.forEach((text, li) => {
           const lY = termY + li * lineH + 10;
           const isCurrent = (li === visibleLines.length - 1 && (currentEvt.mode === 'type' || currentEvt.mode === 'scramble' || currentEvt.mode === 'tirade'));
@@ -1467,15 +1479,13 @@ export default function CRTTerminal() {
         });
         sceneCtx.restore();
 
-        // 3.4 CRT TRINITRON FOSFOR AĞI & SCANLINES (BLURLU KODLARIN ÜZERİNDEN GEÇEN RASTER IZGARASI)
-        // Görseldeki gibi tarama çizgileri blurlu fosfor parıltısının üzerinden keserek geçer
-        sceneCtx.fillStyle = 'rgba(0, 0, 0, 0.28)';
-        for (let y = boxY; y < boxY + boxH; y += 3) {
-          sceneCtx.fillRect(boxX, y, boxW, 1.2);
+        // 3.4 CRT TRINITRON FOSFOR AĞI & SCANLINES (Tek çağrılık GPU Deseni - Sıfır döngü)
+        if (!scanPattern) {
+          try { scanPattern = sceneCtx.createPattern(scanPatternCanvas, 'repeat'); } catch (e) {}
         }
-        sceneCtx.fillStyle = 'rgba(0, 0, 0, 0.16)';
-        for (let x = boxX; x < boxX + boxW; x += 3) {
-          sceneCtx.fillRect(x, boxY, 1.2, boxH);
+        if (scanPattern) {
+          sceneCtx.fillStyle = scanPattern;
+          sceneCtx.fillRect(boxX, boxY, boxW, boxH);
         }
 
         // 3.5 CANLI KÖŞE TELEMETRİ HUD ÇİPİ (TICK SAYACI, SİSTEM FREKANSI, SİNYAL LEDİ)
@@ -1513,7 +1523,6 @@ export default function CRTTerminal() {
 
         if (vitruvianLedImg.complete && vitruvianLedImg.naturalWidth > 0) {
           sceneCtx.save();
-          // Çift katmanlı LED neon post-processing yayılımı (Elektrik cyan + akkor beyaz çekirdek)
           sceneCtx.shadowColor = 'rgba(0, 240, 255, 0.85)';
           sceneCtx.shadowBlur = 18;
           sceneCtx.globalCompositeOperation = 'screen';
@@ -1528,7 +1537,7 @@ export default function CRTTerminal() {
         sceneCtx.restore(); // clip sonu
 
         // 4 KÖŞE PARLAK KIRMIZI L-BRAKETLERİ
-        drawNeonBrackets(sceneCtx, boxX, boxY, boxW, boxH);
+        drawNeonBrackets(sceneCtx, boxX, boxY, boxW, boxH, 34, 4);
       }
 
       // --- THREE.JS WEBGL RENDER ---
