@@ -71,9 +71,9 @@ const fragmentShader = `
   }
 `;
 
-// Dinamik Kod, Hata ve Konsol Olay Akışları (Typewriter, Hata Crash ve Burst Dökümleri)
+// Onlarca Farklı Teknik ve Karışık Akış: Gerçek JS, Hex Dökümleri, Hatalar, Git Diffleri, Gauges, Şemalar, Disasm, Bitstream, Audio DSP, Telemetri
 const SCRIPT_EVENTS = [
-  // 1. Temiz JavaScript Fonksiyonu (Girintili Labirent Oluşturucu)
+  // 1. Teknik: Gerçek JavaScript Fonksiyonu (Nizamî Tab Girintili)
   {
     mode: 'type',
     lines: [
@@ -99,31 +99,99 @@ const SCRIPT_EVENTS = [
       "};"
     ]
   },
-  // 2. Beklenmedik Runtime Hatası ve Stack Trace ("bazı yazılar hata versin")
+  // 2. Teknik: Canlı Hexadecimal Bellek Dökümü (Binary Memory Inspector)
+  {
+    mode: 'burst',
+    lines: [
+      "0x7FFF00:  4A 65 74 20  42 75 66 66  65 72 20 4F  4B 00 00 00  |Jet Buffer OK...|",
+      "0x7FFF10:  E8 1A 02 00  00 48 8D 3D  A4 02 00 00  48 89 C7 E8  |.....H.=....H...|",
+      "0x7FFF20:  01 00 00 00  48 83 C4 20  5D C3 90 90  90 90 90 90  |....H.. ].......|",
+      "0x7FFF30:  55 48 89 E5  48 83 EC 10  C7 45 FC 00  00 00 00 8B  |UH..H....E......|"
+    ]
+  },
+  // 3. Teknik: Ters Renkli Solid Banner + Fatal Crash & Stack Trace
   {
     mode: 'error',
     lines: [
+      "█ FATAL EXCEPTION: CORRUPT_HEAP (0xDEADBEEF) █",
       "Uncaught TypeError: Cannot read properties of undefined (reading 'visited')",
       "  at carveMaze (PathDrops.jsx:420:19)",
       "  at runGenerationLoop (PathDrops.jsx:112:5)",
       "  at HTMLCanvasElement.<anonymous> (CRTTerminal.jsx:325:18)",
-      "[FATAL] Memory corruption detected at grid[cy][cx]",
-      "⚠️ [WARN] Watchdog restarting corrupted worker thread..."
+      "  at processTicksAndRejections (task_queues:95:5)",
+      "⚠️ [WARN] Watchdog restarting corrupted worker thread...",
+      "✓ [RECOVERY] Sandbox isolated. Core dumped to /tmp/core.941"
     ]
   },
-  // 3. Hızlı Konsol / Build Dökümü ("bazen bunch of codes ekrana atılsın")
+  // 4. Teknik: İlerleme Göstergeleri ve ASCII Sparklines
   {
     mode: 'burst',
     lines: [
-      "$ vite build --mode production",
-      "vite v6.4.5 building for production...",
-      "transforming (38) modules...",
-      "✓ 38 modules transformed in 184ms",
-      "dist/assets/index-CrYYBDTP.js   775.5 kB │ gzip: 211.4 kB",
-      "✓ built successfully in 2.14s"
+      "COMPILE [████████████████░░░░] 80% (32/40 modules)",
+      "HEAP    [▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░] 52.4MB / 128MB  GC: 0.4ms",
+      "BUFFERS [■■■■■■■■■■■■■■■■■■■□] 95% [STABLE] 60 FPS",
+      "RECOIL  ∿∿∿∿∿  ▂▃▅▆▇ [DAMPENED]  THRUST: 4,400 N",
+      "IOPS: 14,200/s │ Latency: 0.18ms │ DropRate: 0.00%"
     ]
   },
-  // 4. CultStream Asenkron Veri Akış Fonksiyonu
+  // 5. Teknik: Git Diff Yaması (Yeşil Ekleme, Kırmızı Silme)
+  {
+    mode: 'diff',
+    lines: [
+      "diff --git a/kernel/allocator.ts b/kernel/allocator.ts",
+      "@@ -18,6 +18,8 @@ class MemoryPool {",
+      "-  const buffer = new Buffer(512); // deprecated",
+      "+  const buffer = new SharedArrayBuffer(4096);",
+      "+  Atomics.store(buffer, 0, 0x7F);",
+      "+  buffer.growable = true;",
+      "   this.pool = buffer;"
+    ]
+  },
+  // 6. Teknik: Şifre Çözücü Karakter Scramble (Cyber Decryption)
+  {
+    mode: 'scramble',
+    lines: [
+      "// --- [DECRYPT] INCOMING SECURE PROTOCOL ---",
+      "const handshake = await crypto.subtle.deriveKey(",
+      "  { name: 'ECDH', public: peerPublicKey },",
+      "  privateKey,",
+      "  { name: 'AES-GCM', length: 256 },",
+      "  false,",
+      "  ['encrypt', 'decrypt']",
+      ");",
+      "✓ [SECURE] TLS_AES_256_GCM_SHA384 ESTABLISHED"
+    ]
+  },
+  // 7. Teknik: x86_64 Makine Dili Analizörü (Disassembly)
+  {
+    mode: 'burst',
+    lines: [
+      "// --- [DISASM] /lib/v1_optics_core.so ---",
+      "0x004010a0:  48 89 e5          mov    rbp, rsp",
+      "0x004010a3:  48 83 ec 20       sub    rsp, 0x20",
+      "0x004010a7:  e8 54 0f 00 00    call   init_bloom_pass",
+      "0x004010ac:  85 c0             test   eax, eax",
+      "0x004010ae:  75 1a             jne    0x004010ca <panic>",
+      "0x004010b0:  b8 01 00 00 00    mov    eax, 0x1",
+      "0x004010b5:  c9                leave",
+      "0x004010b6:  c3                ret"
+    ]
+  },
+  // 8. Teknik: Canlı Donanım & Sensör Telemetrisi
+  {
+    mode: 'burst',
+    lines: [
+      "┌──[ HARDWARE_TELEMETRY ]──────────────┐",
+      "│ CORE TEMP: 48.2°C  [NOMINAL] ∿∿∿∿∿   │",
+      "│ VCORE:     1.182V  [STABLE]          │",
+      "│ CLOCK:     4.82GHz [BOOST]           │",
+      "│ GPU LOAD:  [████████████░░░░] 74%    │",
+      "│ VRAM:      6,144MB / 8,192MB         │",
+      "│ JET_FAN:   4,200 RPM [SILENT]        │",
+      "└──────────────────────────────────────┘"
+    ]
+  },
+  // 9. Teknik: CultStream Asenkron Akış Fonksiyonu
   {
     mode: 'type',
     lines: [
@@ -151,21 +219,61 @@ const SCRIPT_EVENTS = [
       "}"
     ]
   },
-  // 5. Bellek Heap ve Garbage Collection Burst Dökümü
+  // 10. Teknik: İkili Bitstream & Parity Hata Düzeltme
   {
     mode: 'burst',
     lines: [
-      "[HEAP_ALLOC] 0x7FFF5FBFF840 :: PAGE_SIZE=4096B [OK]",
-      "[V8::GC] Scavenge 24.2MB (32.0MB) -> 18.4MB (32.0MB) [0.82ms]",
-      "[NET] WebSocket connected: wss://switch.dev/cultstream",
-      "{\"status\": 200, \"ack\": true, \"latency_ms\": 14.2}",
-      "[STREAM_POLL] Chunk 0x8F4A ingested -> 128 bytes flushed"
+      "BITSTREAM: 11010010 01001101 10101111 00100101 [CRC_OK]",
+      "BITSTREAM: 00101011 11100010 01100101 11110001 [CRC_OK]",
+      "BITSTREAM: 11110000 00001111 10100101 01011010 [PARITY_ERR ⚠️]",
+      "⚡ [HAMMING] Auto-correcting single-bit syndrome...",
+      "RECOVERED: 11110000 00001111 10100101 01011011 [FIXED ✓]"
     ]
   },
-  // 6. JSON / Sözdizimi Hatası ve Kurtarma ("bazı yazılar hata versin")
+  // 11. Teknik: Kutulu ASCII Modül Ağacı ve Şema
+  {
+    mode: 'burst',
+    lines: [
+      "┌──[ V1_SUBSYSTEM_MAP ]────────────────┐",
+      "├── src/kernel/memory.rs       [COMPILED]",
+      "│   ├── heap_alloc (4096B)     [SHARED]  ",
+      "│   └── garbage_collector.rs   [ACTIVE]  ",
+      "├── src/maze/pathDrops.ts      [LINKED]  ",
+      "│   └── unseal_cell(42, 18)    [VISITED] ",
+      "└── src/stream/cultStream.wasm [OPTIMIZED]",
+      "└──────────────────────────────────────┘"
+    ]
+  },
+  // 12. Teknik: Ağ / WebSocket Protokol El Sıkışması
+  {
+    mode: 'burst',
+    lines: [
+      ">>> [NET] SYN_SENT [seq: 0x90A1F4, ack: 0]",
+      "<<< [NET] SYN_ACK  [seq: 0x11B3E2, ack: 0x90A1F5, win: 65535]",
+      ">>> [NET] ACK      [seq: 0x90A1F5, ack: 0x11B3E3] ESTABLISHED",
+      "HTTP/2 101 Switching Protocols",
+      "Upgrade: websocket",
+      "Connection: Upgrade",
+      "Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
+    ]
+  },
+  // 13. Teknik: Hızlı Build / Vite Çıktı Patlaması
+  {
+    mode: 'burst',
+    lines: [
+      "$ vite build --mode production",
+      "vite v6.4.5 building for production...",
+      "transforming (38) modules...",
+      "✓ 38 modules transformed in 184ms",
+      "dist/assets/index-CrYYBDTP.js   775.5 kB │ gzip: 211.4 kB",
+      "✓ built successfully in 2.14s"
+    ]
+  },
+  // 14. Teknik: SyntaxError ve Otomatik İyileşme
   {
     mode: 'error',
     lines: [
+      "█ SYNTAX ERROR: UNEXPECTED TOKEN █",
       "SyntaxError: Unexpected token '?' in JSON at position 148",
       "  at JSON.parse (<anonymous>)",
       "  at parseTelemetryStream (CultStream.jsx:88:22)",
@@ -174,7 +282,29 @@ const SCRIPT_EVENTS = [
       "✓ Stream pipeline recovered. Resuming normal loop..."
     ]
   },
-  // 7. WebGL CRT Shader Derleyici Fonksiyonu
+  // 15. Teknik: Optik Hedef Kitleme Telemetrisi (Scramble)
+  {
+    mode: 'scramble',
+    lines: [
+      "// --- [OPTICS] HUD TARGET ACQUISITION ---",
+      "const target = scanAperture({ fov: 94.2, range: 450 });",
+      "if (target.locked) {",
+      "  engageThrusterVector(target.vector, 0.85);",
+      "  calibrateReticle(target.distance);",
+      "  // [LOCK] TARGET_ACQUIRED: (X:418, Y:912, Z:30)",
+      "}"
+    ]
+  },
+  // 16. Teknik: Audio FFT Spektrum & DSP Filtresi
+  {
+    mode: 'burst',
+    lines: [
+      "FFT_SPECTRUM: 60Hz ▅ 120Hz ▇ 250Hz █ 500Hz ▆ 1kHz ▄ 2kHz ▃ 4kHz ▂",
+      "DSP_FILTER:   BiquadFilter [LowPass @ 1,400Hz, Q: 2.4] -> ENGAGED",
+      "SAMPLE_RATE:  48,000 Hz │ LATENCY: 2.1ms │ CHANNELS: 2"
+    ]
+  },
+  // 17. Teknik: CRT Shader Derleyici Fonksiyonu
   {
     mode: 'type',
     lines: [
@@ -196,7 +326,37 @@ const SCRIPT_EVENTS = [
       "};"
     ]
   },
-  // 8. Test ve Sistem Çekirdek Burst Dökümü
+  // 18. Teknik: Veritabanı & IndexedDB İşlemleri
+  {
+    mode: 'type',
+    lines: [
+      "// --- [DATABASE] PERSISTENT TRANSACTION ---",
+      "const tx = db.transaction(['maze_nodes'], 'readwrite');",
+      "const store = tx.objectStore('maze_nodes');",
+      "const query = store.index('visited').getAll(IDBKeyRange.only(false));",
+      "",
+      "query.onsuccess = () => {",
+      "  const pending = query.result;",
+      "  console.log(`Unvisited frontiers: ${pending.length}`);",
+      "  store.put({ id: 0x4B2, cell: [24, 18], cleared: true });",
+      "};"
+    ]
+  },
+  // 19. Teknik: Out-of-Memory Kernel Panic & Çöp Toplayıcı Süpürmesi
+  {
+    mode: 'error',
+    lines: [
+      "█ KERNEL PANIC: OUT_OF_MEMORY (ERR_OOM_382) █",
+      "FATAL: JavaScript heap out of memory",
+      "  at Array.map (<anonymous>)",
+      "  at buildSubdivisionTree (PathDrops.jsx:512:14)",
+      "  at HTMLCanvasElement.renderLoop (CRTTerminal.jsx:920:9)",
+      "⚡ [SWEEP] Forcing generational garbage collection...",
+      "⚡ [RECLAIM] 142.8 MB freed across 3 heap segments.",
+      "✓ Memory pressure resolved: [████░░░░░░░░░░░░] 22% used"
+    ]
+  },
+  // 20. Teknik: Test Paketi Çıktısı
   {
     mode: 'burst',
     lines: [
@@ -207,31 +367,6 @@ const SCRIPT_EVENTS = [
       "✓ 22 tests passed in 48ms",
       "[SYS] Kernel state synchronized :: V1_READY"
     ]
-  },
-  // 9. V1 Alt Sistem Olay Çekirdeği Sınıfı
-  {
-    mode: 'type',
-    lines: [
-      "// --- [KERNEL] V1 SUBSYSTEM EVENT DISPATCHER ---",
-      "class V1SubsystemKernel extends EventTarget {",
-      "  constructor(config = {}) {",
-      "    super();",
-      "    this.state = 'ONLINE';",
-      "    this.fuelIntake = 1.0;",
-      "  }",
-      "",
-      "  dispatchAction(actionType, payload) {",
-      "    if (this.state !== 'ONLINE') return;",
-      "    const event = new CustomEvent(actionType, {",
-      "      detail: {",
-      "        timestamp: performance.now(),",
-      "        data: payload",
-      "      }",
-      "    });",
-      "    this.dispatchEvent(event);",
-      "  }",
-      "}"
-    ]
   }
 ];
 
@@ -241,37 +376,264 @@ const JS_KEYWORDS = new Set([
   'break', 'super', 'true', 'false', 'null', 'undefined', 'extends'
 ]);
 
-function renderCodeLine(ctx, text, x, y, isTyping, now) {
+const SCRAMBLE_CHARS = '!@#$%^&*<>[]{}0123456789ABCDEFλΩΞ';
+
+function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
   const trimmed = text.trim();
 
-  // 1. HATA SATIRLARI (Kırmızı vurgulu, stack trace veya fatal crash)
+  // 1. TERS RENKLİ VURGU BANNERLARI (█ ...)
+  if (trimmed.startsWith('█')) {
+    const bannerText = trimmed.replace(/█/g, '').trim();
+    ctx.font = 'bold 10.5px "Share Tech Mono", monospace';
+    const tw = ctx.measureText(bannerText).width;
+
+    let bg = '#ff2233';
+    let fg = '#ffffff';
+    if (trimmed.includes('SYNTAX') || trimmed.includes('WARN')) {
+      bg = '#ffaa00'; fg = '#000000';
+    } else if (trimmed.includes('SECURE') || trimmed.includes('TARGET') || trimmed.includes('V1')) {
+      bg = '#00f0ff'; fg = '#000000';
+    } else if (trimmed.includes('PANIC') || trimmed.includes('FATAL') || trimmed.includes('OOM')) {
+      bg = '#ff1122'; fg = '#ffffff';
+    }
+
+    ctx.fillStyle = bg;
+    ctx.fillRect(x - 2, y - 10, Math.min(tw + 12, (termW || 280)), 13);
+    ctx.fillStyle = fg;
+    ctx.fillText(bannerText, x + 3, y);
+    return;
+  }
+
+  // 2. HATA SATIRLARI (Uncaught, TypeError, SyntaxError, RangeError, FATAL, [PANIC])
   if (
     trimmed.startsWith('Uncaught') ||
     trimmed.startsWith('TypeError') ||
     trimmed.startsWith('SyntaxError') ||
     trimmed.startsWith('RangeError') ||
     trimmed.startsWith('Error:') ||
+    trimmed.startsWith('FATAL:') ||
     trimmed.startsWith('[FATAL]') ||
     trimmed.startsWith('[PANIC]')
   ) {
+    // CRT Glitch titremesi (Kritik hata anında 1-2px yatay jitter)
+    const jitter = Math.sin(now * 0.08) > 0.65 ? 2.5 : 0;
     ctx.fillStyle = '#ff2233';
     ctx.font = 'bold 11px "Share Tech Mono", monospace';
     ctx.shadowColor = 'rgba(255, 34, 51, 0.7)';
     ctx.shadowBlur = 6;
-    ctx.fillText(text, x, y);
+    ctx.fillText(text, x + jitter, y);
     ctx.shadowBlur = 0;
     return;
   }
 
-  // 2. STACK TRACE SATIRLARI ("  at ...")
+  // 3. STACK TRACE SATIRLARI ("  at ...")
   if (trimmed.startsWith('at ') || text.startsWith('  at ')) {
     ctx.fillStyle = 'rgba(255, 130, 130, 0.82)';
-    ctx.font = '10.5px "Share Tech Mono", monospace';
+    ctx.font = '10px "Share Tech Mono", monospace';
     ctx.fillText(text, x, y);
     return;
   }
 
-  // 3. UYARI SATIRLARI (⚠️, [WARN], Warning:)
+  // 4. GIT DIFF SATIRLARI (diff, @@, +, -)
+  if (trimmed.startsWith('diff ') || trimmed.startsWith('index ')) {
+    ctx.fillStyle = 'rgba(200, 235, 255, 0.75)';
+    ctx.font = 'bold 10px "Share Tech Mono", monospace';
+    ctx.fillText(text, x, y);
+    return;
+  }
+  if (trimmed.startsWith('@@')) {
+    ctx.fillStyle = '#00f0ff';
+    ctx.font = 'bold 10.5px "Share Tech Mono", monospace';
+    ctx.fillText(text, x, y);
+    return;
+  }
+  if (trimmed.startsWith('+') && !trimmed.startsWith('++')) {
+    ctx.fillStyle = 'rgba(57, 255, 20, 0.12)';
+    ctx.fillRect(x - 2, y - 10, termW || 280, 13);
+    ctx.fillStyle = '#39ff14';
+    ctx.font = '11px "Share Tech Mono", monospace';
+    ctx.fillText(text, x, y);
+    return;
+  }
+  if (trimmed.startsWith('-') && !trimmed.startsWith('--')) {
+    ctx.fillStyle = 'rgba(255, 40, 50, 0.12)';
+    ctx.fillRect(x - 2, y - 10, termW || 280, 13);
+    ctx.fillStyle = '#ff4455';
+    ctx.font = '11px "Share Tech Mono", monospace';
+    ctx.fillText(text, x, y);
+    return;
+  }
+
+  // 5. HEX MEMORY DUMP SATIRLARI (0x7FFF...)
+  if (trimmed.startsWith('0x7FFF')) {
+    const pipeIdx = text.indexOf('|');
+    const addrEnd = text.indexOf(':');
+    ctx.font = '10px "Share Tech Mono", monospace';
+    if (addrEnd !== -1 && pipeIdx !== -1) {
+      const addr = text.slice(0, addrEnd + 1);
+      const hexBytes = text.slice(addrEnd + 1, pipeIdx);
+      const ascii = text.slice(pipeIdx);
+
+      ctx.fillStyle = '#00f0ff';
+      ctx.fillText(addr, x, y);
+      const ax = x + ctx.measureText(addr + ' ').width;
+
+      ctx.fillStyle = '#ffbb33';
+      ctx.fillText(hexBytes, ax, y);
+      const hx = ax + ctx.measureText(hexBytes).width;
+
+      ctx.fillStyle = '#39ff14';
+      ctx.fillText(ascii, hx, y);
+      return;
+    }
+  }
+
+  // 6. x86_64 DISASSEMBLY SATIRLARI (0x0040...:  48 89 e5  mov rbp, rsp)
+  if (/^0x0040[0-9a-fA-F]{4}:/.test(trimmed)) {
+    const addrEnd = text.indexOf(':');
+    const rest = text.slice(addrEnd + 1).trim();
+    const match = rest.match(/^((?:[0-9a-fA-F]{2}\s*){1,5})\s{2,}(.*)$/);
+    ctx.font = '10px "Share Tech Mono", monospace';
+    ctx.fillStyle = '#00f0ff';
+    ctx.fillText(text.slice(0, addrEnd + 1), x, y);
+    const ax = x + ctx.measureText(text.slice(0, addrEnd + 1) + '  ').width;
+
+    if (match) {
+      ctx.fillStyle = '#ffaa00';
+      ctx.fillText(match[1].padEnd(14), ax, y);
+      const mx = ax + ctx.measureText(match[1].padEnd(14) + ' ').width;
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 10px "Share Tech Mono", monospace';
+      ctx.fillText(match[2], mx, y);
+    } else {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(rest, ax, y);
+    }
+    return;
+  }
+
+  // 7. BITSTREAM VE PARITY DÜZELTME SATIRLARI (BITSTREAM: 1101...)
+  if (trimmed.startsWith('BITSTREAM:')) {
+    ctx.font = '10px "Share Tech Mono", monospace';
+    ctx.fillStyle = '#00f0ff';
+    ctx.fillText('BITSTREAM: ', x, y);
+    const bx = x + ctx.measureText('BITSTREAM: ').width;
+
+    const remainder = text.replace(/^BITSTREAM:\s*/, '');
+    const parts = remainder.split(/(\[[^\]]+\])/);
+    ctx.fillStyle = '#39ff14';
+    ctx.fillText(parts[0] || '', bx, y);
+
+    if (parts[1]) {
+      const rx = bx + ctx.measureText(parts[0] || '').width;
+      ctx.fillStyle = parts[1].includes('ERR') ? '#ff3344' : '#00f0ff';
+      ctx.font = 'bold 10px "Share Tech Mono", monospace';
+      ctx.fillText(parts[1], rx, y);
+    }
+    return;
+  }
+
+  // 8. AUDIO DSP VE FFT SPEKTRUMU (FFT_SPECTRUM:, DSP_FILTER:)
+  if (trimmed.startsWith('FFT_SPECTRUM:') || trimmed.startsWith('DSP_FILTER:') || trimmed.startsWith('SAMPLE_RATE:')) {
+    ctx.font = '10px "Share Tech Mono", monospace';
+    if (trimmed.startsWith('FFT_SPECTRUM:')) {
+      ctx.fillStyle = '#00f0ff';
+      ctx.fillText('FFT: ', x, y);
+      const fx = x + ctx.measureText('FFT: ').width;
+      ctx.fillStyle = '#39ff14';
+      ctx.fillText(text.replace('FFT_SPECTRUM: ', ''), fx, y);
+    } else if (trimmed.startsWith('DSP_FILTER:')) {
+      ctx.fillStyle = '#ffaa00';
+      ctx.fillText(text, x, y);
+    } else {
+      ctx.fillStyle = 'rgba(200, 230, 255, 0.8)';
+      ctx.fillText(text, x, y);
+    }
+    return;
+  }
+
+  // 9. AĞ VE PROTOKOL İLETİŞİMİ (>>>, <<<, HTTP/, Upgrade:)
+  if (
+    trimmed.startsWith('>>>') ||
+    trimmed.startsWith('<<<') ||
+    trimmed.startsWith('HTTP/') ||
+    trimmed.startsWith('Upgrade:') ||
+    trimmed.startsWith('Connection:') ||
+    trimmed.startsWith('Sec-WebSocket')
+  ) {
+    ctx.font = '10px "Share Tech Mono", monospace';
+    if (trimmed.startsWith('>>>')) {
+      ctx.fillStyle = '#00f0ff';
+    } else if (trimmed.startsWith('<<<')) {
+      ctx.fillStyle = '#39ff14';
+    } else if (trimmed.startsWith('HTTP/')) {
+      ctx.fillStyle = '#ffbb33';
+      ctx.font = 'bold 10px "Share Tech Mono", monospace';
+    } else {
+      ctx.fillStyle = 'rgba(180, 225, 255, 0.75)';
+    }
+    ctx.fillText(text, x, y);
+    return;
+  }
+
+  // 10. ÇÖP TOPLAYICI & SİBER YILDIRIM SATIRLARI (⚡ ...)
+  if (trimmed.startsWith('⚡')) {
+    ctx.fillStyle = '#ffcc00';
+    ctx.font = 'bold 10.5px "Share Tech Mono", monospace';
+    ctx.fillText(text, x, y);
+    return;
+  }
+
+  // 11. GÖSTERGE VE ASCII İLERLEME ÇUBUKLARI ([███, [▓▓▓, [■■■, ∿∿∿)
+  if (trimmed.includes('[██') || trimmed.includes('[▓▓') || trimmed.includes('[■■') || trimmed.includes('∿∿∿')) {
+    const parts = text.split(/(\[[█▓■░□]+\])/g);
+    let gx = x;
+    ctx.font = '11px "Share Tech Mono", monospace';
+    parts.forEach((p) => {
+      if (p.startsWith('[')) {
+        ctx.fillStyle = '#39ff14';
+        ctx.font = 'bold 11px "Share Tech Mono", monospace';
+      } else if (p.includes('%') || p.includes('MB') || p.includes('FPS') || p.includes('4,400') || p.includes('RPM')) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '11px "Share Tech Mono", monospace';
+      } else {
+        ctx.fillStyle = '#00f0ff';
+        ctx.font = 'bold 11px "Share Tech Mono", monospace';
+      }
+      ctx.fillText(p, gx, y);
+      gx += ctx.measureText(p).width;
+    });
+    return;
+  }
+
+  // 12. KUTULU ASCII AĞAÇ VE ŞEMA BLOKLARI (┌, ├, │, └)
+  if (trimmed.startsWith('┌') || trimmed.startsWith('├') || trimmed.startsWith('│') || trimmed.startsWith('└')) {
+    ctx.font = '11px "Share Tech Mono", monospace';
+    const parts = text.split(/(\[[^\]]+\])/g);
+    let bx = x;
+    parts.forEach((p) => {
+      if (p.startsWith('[') && (p.includes('█') || p.includes('▓') || p.includes('■') || p.includes('░'))) {
+        ctx.fillStyle = '#39ff14';
+        ctx.font = 'bold 11px "Share Tech Mono", monospace';
+      } else if (p.startsWith('[')) {
+        ctx.fillStyle = (p.includes('ERR') || p.includes('CRIT'))
+          ? '#ff3344'
+          : (p.includes('LINK') || p.includes('COMP') || p.includes('OPT') || p.includes('NOM') || p.includes('STABLE') || p.includes('SILENT') || p.includes('BOOST')
+            ? '#39ff14'
+            : '#ffaa00');
+        ctx.font = 'bold 10px "Share Tech Mono", monospace';
+      } else {
+        ctx.fillStyle = 'rgba(0, 240, 255, 0.78)';
+        ctx.font = '11px "Share Tech Mono", monospace';
+      }
+      ctx.fillText(p, bx, y);
+      bx += ctx.measureText(p).width;
+    });
+    return;
+  }
+
+  // 13. UYARI SATIRLARI (⚠️, [WARN], Warning:)
   if (trimmed.startsWith('⚠️') || trimmed.startsWith('[WARN]') || trimmed.startsWith('Warning:')) {
     ctx.fillStyle = '#ffaa00';
     ctx.font = 'bold 11px "Share Tech Mono", monospace';
@@ -279,15 +641,15 @@ function renderCodeLine(ctx, text, x, y, isTyping, now) {
     return;
   }
 
-  // 4. BAŞARI / TEST SATIRLARI (✓, PASS)
-  if (trimmed.startsWith('✓') || trimmed.startsWith('PASS')) {
+  // 14. BAŞARI / TEST SATIRLARI (✓, PASS, RECOVERED:)
+  if (trimmed.startsWith('✓') || trimmed.startsWith('PASS') || trimmed.startsWith('RECOVERED:')) {
     ctx.fillStyle = '#39ff14';
     ctx.font = 'bold 11px "Share Tech Mono", monospace';
     ctx.fillText(text, x, y);
     return;
   }
 
-  // 5. SHELL KOMUTLARI ($ ...)
+  // 15. SHELL KOMUTLARI ($ ...)
   if (trimmed.startsWith('$')) {
     ctx.fillStyle = '#00f0ff';
     ctx.font = 'bold 11px "Share Tech Mono", monospace';
@@ -299,7 +661,7 @@ function renderCodeLine(ctx, text, x, y, isTyping, now) {
     return;
   }
 
-  // 6. YORUM SATIRLARI (// ...)
+  // 16. YORUM SATIRLARI (// ...)
   if (trimmed.startsWith('//')) {
     ctx.fillStyle = 'rgba(0, 240, 255, 0.45)';
     ctx.font = '11px "Share Tech Mono", monospace';
@@ -312,7 +674,7 @@ function renderCodeLine(ctx, text, x, y, isTyping, now) {
     return;
   }
 
-  // 7. TELEMETRİ / JSON / HEAP SATIRLARI
+  // 17. TELEMETRİ / JSON / HEAP SATIRLARI
   if (
     trimmed.startsWith('{') ||
     trimmed.startsWith('[HEAP') ||
@@ -327,7 +689,7 @@ function renderCodeLine(ctx, text, x, y, isTyping, now) {
     return;
   }
 
-  // 8. STANDART JAVASCRIPT KODLARI (Sözdizimi renklendirmesi + tab girintisi)
+  // 18. STANDART JAVASCRIPT KODLARI (Sözdizimi renklendirmesi + tab girintisi)
   const tokens = text.split(/([a-zA-Z0-9_$]+|'[^']*'|"[^"]*"|`[^`]*`|\s+|[^\s\w])/g);
   let curX = x;
 
@@ -541,6 +903,28 @@ export default function CRTTerminal() {
           } else {
             typeState.pauseUntil = now + 90; // Hata satırları hızlıca düşer
           }
+        } else if (currentEvt.mode === 'scramble') {
+          // SİBER ŞİFRE ÇÖZÜCÜ (SCRAMBLE DECRYPT) MODU:
+          // Her satır önce şifreli matris glifleri olarak belirir ve hızla karakter karakter çözülür
+          const currentLine = currentLines[typeState.lineIdx] || '';
+          if (typeState.charIdx === 0) {
+            const firstNonSpace = currentLine.search(/\S|$/);
+            typeState.charIdx = firstNonSpace;
+          }
+          typeState.charIdx = Math.min(currentLine.length, typeState.charIdx + 3);
+
+          if (typeState.charIdx >= currentLine.length) {
+            typeState.completedLines.push(currentLine);
+            typeState.lineIdx++;
+            typeState.charIdx = 0;
+            if (typeState.lineIdx >= currentLines.length) {
+              typeState.pauseUntil = now + 1200;
+              typeState.lineIdx = 0;
+              typeState.eventIdx = (typeState.eventIdx + 1) % SCRIPT_EVENTS.length;
+            } else {
+              typeState.pauseUntil = now + 40;
+            }
+          }
         } else {
           // STANDART TYPEWRITER MODU: Hızlı daktilo (tab girintisi anında atlanır)
           const currentLine = currentLines[typeState.lineIdx] || '';
@@ -737,18 +1121,30 @@ export default function CRTTerminal() {
           sceneCtx.fillRect(x, boxY, 1.2, boxH);
         }
 
-        // 3. JAVASCRIPT TYPEWRITER & BURST KOD TERMİNALİ (Hızlı akan, tab girintili, hatalar ve dökümler içeren)
+        // 3. JAVASCRIPT TYPEWRITER & BURST KOD TERMİNALİ (Hızlı akan, tab girintili, onlarca teknik içeren)
         const termPadX = 16;
         const termPadY = 18;
         const termX = boxX + termPadX;
         const termY = boxY + termPadY;
+        const termW = boxW - termPadX * 2;
         const termH = boxH - termPadY * 2;
         const lineH = 14;
         const maxVisible = Math.floor(termH / lineH);
 
         const linesToRender = [...typeState.completedLines];
-        if (currentEvt.mode === 'type' && typeState.lineIdx < currentLines.length) {
-          linesToRender.push(currentLines[typeState.lineIdx].slice(0, typeState.charIdx));
+        if (typeState.lineIdx < currentLines.length) {
+          const fullLine = currentLines[typeState.lineIdx];
+          if (currentEvt.mode === 'type') {
+            linesToRender.push(fullLine.slice(0, typeState.charIdx));
+          } else if (currentEvt.mode === 'scramble') {
+            let scrambledTail = '';
+            const remaining = fullLine.length - typeState.charIdx;
+            const scrambleCount = Math.min(remaining, 6);
+            for (let s = 0; s < scrambleCount; s++) {
+              scrambledTail += SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+            }
+            linesToRender.push(fullLine.slice(0, typeState.charIdx) + scrambledTail);
+          }
         }
 
         const startIdx = Math.max(0, linesToRender.length - maxVisible);
@@ -757,9 +1153,37 @@ export default function CRTTerminal() {
         sceneCtx.save();
         visibleLines.forEach((text, li) => {
           const lY = termY + li * lineH + 10;
-          const isCurrent = (li === visibleLines.length - 1 && currentEvt.mode === 'type');
-          renderCodeLine(sceneCtx, text, termX, lY, isCurrent, now);
+          const isCurrent = (li === visibleLines.length - 1 && (currentEvt.mode === 'type' || currentEvt.mode === 'scramble'));
+          renderCodeLine(sceneCtx, text, termX, lY, isCurrent, now, termW);
         });
+        sceneCtx.restore();
+
+        // 3.5 CANLI KÖŞE TELEMETRİ HUD ÇİPİ (TICK SAYACI, SİSTEM FREKANSI, SİNYAL LEDİ)
+        const chipW = 144;
+        const chipH = 15;
+        const chipX = boxX + boxW - chipW - 14;
+        const chipY = boxY + 14;
+
+        sceneCtx.save();
+        sceneCtx.fillStyle = 'rgba(0, 18, 30, 0.75)';
+        sceneCtx.fillRect(chipX, chipY - 10, chipW, chipH);
+        sceneCtx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
+        sceneCtx.lineWidth = 1;
+        sceneCtx.strokeRect(chipX, chipY - 10, chipW, chipH);
+
+        const pulseAlpha = Math.sin(now * 0.007) * 0.4 + 0.6;
+        sceneCtx.beginPath();
+        sceneCtx.arc(chipX + 8, chipY - 2.5, 2.5, 0, Math.PI * 2);
+        sceneCtx.fillStyle = `rgba(0, 240, 255, ${pulseAlpha})`;
+        sceneCtx.shadowColor = '#00f0ff';
+        sceneCtx.shadowBlur = 5;
+        sceneCtx.fill();
+
+        sceneCtx.font = '9px "Share Tech Mono", monospace';
+        sceneCtx.fillStyle = '#00f0ff';
+        sceneCtx.shadowBlur = 0;
+        const tickVal = Math.floor(now * 0.06) % 99999;
+        sceneCtx.fillText(`TICK:${tickVal.toString().padStart(5, '0')}  SYS:60Hz`, chipX + 16, chipY);
         sceneCtx.restore();
 
         // 4. ANATOMİ ÇİZİMİ (Holografik neon çizim kodların üzerinde ışıldar)
