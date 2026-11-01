@@ -400,7 +400,7 @@ export default function CRTTerminal() {
         // Sağ Üst (┐)
         sceneCtx.beginPath();
         sceneCtx.moveTo(cardX + cardSize - bLen, cardY);
-        sceneCtx.lineTo(cardX + cardSize);
+        sceneCtx.lineTo(cardX + cardSize, cardY);
         sceneCtx.lineTo(cardX + cardSize, cardY + bLen);
         sceneCtx.stroke();
 

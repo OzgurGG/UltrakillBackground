@@ -122,13 +122,16 @@ export function initPathDrops(cvs) {
     }
 
     function build() {
-      const p = cvs.parentElement; if (!p) return;
+      const p = cvs.parentElement;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      w = p.clientWidth; h = p.clientHeight;
+      w = p ? p.clientWidth : (cvs.style.width ? parseFloat(cvs.style.width) : (cvs.width ? cvs.width / dpr : 800));
+      h = p ? p.clientHeight : (cvs.style.height ? parseFloat(cvs.style.height) : (cvs.height ? cvs.height / dpr : 600));
+      if (!w || !h || isNaN(w) || isNaN(h)) { w = 800; h = 600; }
       cvs.width = w * dpr; cvs.height = h * dpr;
       cvs.style.width = w + 'px'; cvs.style.height = h + 'px';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      cols = Math.ceil(w / CELL_W); rows = Math.ceil(h / CELL_H);
+      cols = Math.max(5, Math.ceil(w / CELL_W));
+      rows = Math.max(5, Math.ceil(h / CELL_H));
       grid = Array.from({ length: rows }, () => Array.from({ length: cols }, makeCell));
       drops = []; nodes = []; dirtySet.clear();
     }
@@ -416,7 +419,7 @@ export function initPathDrops(cvs) {
         while (attempts-- > 0) {
           const r = Math.floor(Math.random() * rows);
           const c = Math.floor(Math.random() * cols);
-          if (!inNodeBuf(r, c, CONFIG.node.buffer) &&
+          if (grid[r] && grid[r][c] && !inNodeBuf(r, c, CONFIG.node.buffer) &&
             grid[r][c].val === 0 && !grid[r][c].blocked) {
             const dir = DIRS[Math.floor(Math.random() * DIRS.length)];
             const tgt = findOpenTarget(r, c);
