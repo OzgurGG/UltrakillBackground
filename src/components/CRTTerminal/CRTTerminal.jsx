@@ -368,11 +368,11 @@ export default function CRTTerminal() {
           sceneCtx.fillRect(x, cardY, 1.2, cardH);
         }
 
-        // 3. ANATOMİ ÇİZİMİNİN KONUMU (BORDERLARA KADAR ULAŞAN BÜYÜK BOYUT)
-        // Kullanıcı isteği: "anatomi resmi yeterince büyük değil. borderlara kadar ulaşmasını istiyordum."
-        const vSize = Math.round(Math.min(cardW * 0.88, cardH - 22));
-        const vX = Math.round(cardX + cardW - vSize - 8);
-        const vY = Math.round(cardY + (cardH - vSize) / 2 + 5);
+        // 3. ANATOMİ ÇİZİMİNİN KONUMU (KÖŞELERE VE KENARLARA SIFIRA SIFIR DAYANMIŞ)
+        // Kullanıcı isteği: "karakterimizi iyice köçşelere dayayıp sıfıra sıfır yapıp yani sağ üst ve alt köşeylerede sıfıra sıfır yapıp"
+        const vSize = Math.round(cardH * 1.076);
+        const vY = Math.round(cardY - vSize * (32 / 1080));
+        const vX = Math.round(cardX + cardW - vSize * (1036 / 1080));
 
         if (vitruvianLedImg.complete && vitruvianLedImg.naturalWidth > 0) {
           sceneCtx.save();
@@ -572,9 +572,9 @@ export default function CRTTerminal() {
           const lineY = headerY + 4;
 
           // 1. KUSURSUZ 45° CAD LİDER ÇİZGİSİ (Organ noktasından çıkar, 45° kırılır, başlık altı çizgiye bağlanır)
-          const stubX = c.ox - 10;
+          // Kullanıcı isteği: Kırılma noktalarında nokta yok, çizgilerde animasyon yok
           const dy = c.oy - lineY;
-          const elbowX = Math.max(textRight + 8, stubX - Math.abs(dy));
+          const elbowX = Math.max(textRight + 8, c.ox - Math.abs(dy));
 
           sceneCtx.save();
           sceneCtx.strokeStyle = 'rgba(0, 240, 255, 0.82)';
@@ -584,17 +584,9 @@ export default function CRTTerminal() {
 
           sceneCtx.beginPath();
           sceneCtx.moveTo(c.ox, c.oy);
-          sceneCtx.lineTo(stubX, c.oy);
           sceneCtx.lineTo(elbowX, lineY);
           sceneCtx.lineTo(textLeft, lineY);
           sceneCtx.stroke();
-
-          // Kırılma dirseğinde küçük tech kare vurgusu
-          sceneCtx.fillStyle = '#00f0ff';
-          sceneCtx.fillRect(elbowX - 2, lineY - 2, 4, 4);
-
-          // Sol uç terminal çentiği
-          sceneCtx.fillRect(textLeft - 1, lineY - 3, 2, 6);
 
           // 2. ORGAN ÇIKIŞ NOKTASINDA HEDEF RETICLE & ETİKET
           sceneCtx.beginPath();
@@ -623,35 +615,6 @@ export default function CRTTerminal() {
           sceneCtx.fillStyle = '#00f0ff';
           sceneCtx.shadowBlur = 0;
           sceneCtx.fillText(c.tag, c.ox + 9, c.oy + 3);
-
-          // 3. ÇİZGİ ÜZERİNDE AKAN CANLI IŞIK TANECİĞİ (Animated Photon Pulse Bead)
-          const seg1 = 10;
-          const seg2 = Math.hypot(elbowX - stubX, lineY - c.oy);
-          const seg3 = Math.max(0, elbowX - textLeft);
-          const totalLen = seg1 + seg2 + seg3;
-          const pulseT = ((now * 0.0006 + i * 0.22) % 1.0);
-          const curDist = pulseT * totalLen;
-
-          let px, py;
-          if (curDist < seg1) {
-            const t = curDist / seg1;
-            px = c.ox - t * 10;
-            py = c.oy;
-          } else if (curDist < seg1 + seg2) {
-            const t = (curDist - seg1) / seg2;
-            px = stubX + (elbowX - stubX) * t;
-            py = c.oy + (lineY - c.oy) * t;
-          } else {
-            const t = (curDist - seg1 - seg2) / seg3;
-            px = elbowX - t * (elbowX - textLeft);
-            py = lineY;
-          }
-          sceneCtx.beginPath();
-          sceneCtx.arc(px, py, 2.2, 0, Math.PI * 2);
-          sceneCtx.fillStyle = '#ffffff';
-          sceneCtx.shadowColor = '#00f0ff';
-          sceneCtx.shadowBlur = 8;
-          sceneCtx.fill();
 
           // 4. KOD / TELEMETRİ YAZI BLOĞU (Çeşitlendirilmiş renkler, ölçüler, göstergeler)
           sceneCtx.font = 'bold 11px "Share Tech Mono", monospace';
