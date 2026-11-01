@@ -195,7 +195,28 @@ export default function CRTTerminal() {
 
     // 5. Ana Çizim & Bükme Döngüsü (60 FPS)
     let rafId;
+
+    function drawBadge(ctx, text, x, y, fg, bg) {
+      ctx.save();
+      ctx.font = 'bold 9px "Share Tech Mono", monospace';
+      const tw = ctx.measureText(text).width;
+      const pw = tw + 8;
+      const ph = 13;
+      const px = Math.round(x);
+      const py = Math.round(y - 9.5);
+      ctx.fillStyle = bg;
+      ctx.fillRect(px, py, pw, ph);
+      ctx.strokeStyle = fg;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px, py, pw, ph);
+      ctx.fillStyle = fg;
+      ctx.fillText(text, px + 4, py + 9.5);
+      ctx.restore();
+      return pw;
+    }
+
     function renderLoop() {
+      const now = performance.now();
       const p = profilRef.current;
       if (avatarImg.src !== p.avatarUrl) {
         avatarImg.src = p.avatarUrl;
@@ -306,13 +327,13 @@ export default function CRTTerminal() {
       sceneCtx.drawImage(mazeCanvas, 0, HEADER_HEIGHT, width, Math.max(10, height - HEADER_HEIGHT));
 
 
-      // D. SAĞ YARI BÖLÜM: BÜYÜK ANATOMİ HUD PANELİ (LED ÇİZİM + ÇIKIŞ ÇİZGİLERİ + KOD BLOKLARI)
+      // D. SAĞ YARI BÖLÜM: BÜYÜK ANATOMİ HUD PANELİ (BORDERLARA UZANAN DEV LED GÖRSEL + KUSURSUZ 45° KILAVUZLAR + ÇEŞİTLENDİRİLMİŞ TELEMETRİ)
       const bodyH = Math.max(10, height - HEADER_HEIGHT);
-      const padX = 24;
-      const padY = 16;
+      const padX = 18;
+      const padY = 12;
       
-      // Ekranı ikiye bölüyoruz: Sağ bölümün tamamını kaplayan panel
-      const cardX = Math.round(width * 0.46);
+      // Ekranı ikiye bölüyoruz: Sağ bölümü kaplayan geniş panel (~60% genişlik)
+      const cardX = Math.round(width * 0.40);
       const cardY = HEADER_HEIGHT + padY;
       const cardW = width - cardX - padX;
       const cardH = bodyH - padY * 2;
@@ -347,118 +368,332 @@ export default function CRTTerminal() {
           sceneCtx.fillRect(x, cardY, 1.2, cardH);
         }
 
-        // 3. ANATOMİ ÇİZİMİNİN KONUMU (Sağ tarafta ferahça yerleşir)
-        const vSize = Math.min(cardW * 0.58, cardH * 0.86, 560);
-        const vX = cardX + cardW - vSize - 18;
-        const vY = cardY + (cardH - vSize) / 2 + 12;
+        // 3. ANATOMİ ÇİZİMİNİN KONUMU (BORDERLARA KADAR ULAŞAN BÜYÜK BOYUT)
+        // Kullanıcı isteği: "anatomi resmi yeterince büyük değil. borderlara kadar ulaşmasını istiyordum."
+        const vSize = Math.round(Math.min(cardW * 0.88, cardH - 22));
+        const vX = Math.round(cardX + cardW - vSize - 8);
+        const vY = Math.round(cardY + (cardH - vSize) / 2 + 5);
 
         if (vitruvianLedImg.complete && vitruvianLedImg.naturalWidth > 0) {
           sceneCtx.save();
-          // Çift katmanlı LED neon post-processing yayılımı
+          // Çift katmanlı LED neon post-processing yayılımı (Elektrik cyan + akkor beyaz çekirdek)
           sceneCtx.shadowColor = 'rgba(0, 240, 255, 0.85)';
           sceneCtx.shadowBlur = 18;
           sceneCtx.globalCompositeOperation = 'screen';
           sceneCtx.drawImage(vitruvianLedImg, vX, vY, vSize, vSize);
 
-          // Sıcak akkor beyaz çekirdek
           sceneCtx.shadowColor = 'rgba(255, 255, 255, 0.95)';
           sceneCtx.shadowBlur = 6;
           sceneCtx.drawImage(vitruvianLedImg, vX, vY, vSize, vSize);
           sceneCtx.restore();
         }
 
-        // 4. ANATOMİ NOKTALARINDAN ÇIKAN ÇİZGİLER VE KOD BLOKLARI (Referans görseldeki gibi)
-        // Çizgilerin çıktığı organ koordinatları (vX, vY, vSize'a bağıntılı)
+        // 4. SOL HUD TELEMETRİ BÖLÜMÜ
+        const textLeft = cardX + 16;
+        const textW = Math.max(180, Math.min(290, vX - cardX + 40));
+        const textRight = textLeft + textW;
+
+        const topY = cardY + 36;
+        const bottomY = cardY + cardH - 18;
+        const totalAvailH = bottomY - topY;
+
+        // --- A. SPIDERWEB POLAR HEDEFLEME RADARI (Referans görseldeki üst-sol örümcek ağı radar reticle) ---
+        const radarRadius = Math.min(32, Math.max(22, totalAvailH * 0.055));
+        const rX = textLeft + radarRadius + 4;
+        const rY = topY + radarRadius + 6;
+        const rR = radarRadius;
+
+        sceneCtx.save();
+        sceneCtx.lineWidth = 1;
+
+        // Eşmerkezli halkalar
+        [0.33, 0.66, 1.0].forEach((ratio) => {
+          sceneCtx.beginPath();
+          sceneCtx.arc(rX, rY, rR * ratio, 0, Math.PI * 2);
+          sceneCtx.strokeStyle = 'rgba(0, 240, 255, 0.28)';
+          sceneCtx.stroke();
+        });
+
+        // 8 kutupsal ışın (Spoke lines)
+        for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+          sceneCtx.beginPath();
+          sceneCtx.moveTo(rX, rY);
+          sceneCtx.lineTo(rX + Math.cos(a) * rR, rY + Math.sin(a) * rR);
+          sceneCtx.strokeStyle = 'rgba(0, 240, 255, 0.2)';
+          sceneCtx.stroke();
+        }
+        // Dış örümcek ağı poligonu
+        sceneCtx.beginPath();
+        for (let a = 0; a <= Math.PI * 2 + 0.1; a += Math.PI / 4) {
+          const wx = rX + Math.cos(a) * rR;
+          const wy = rY + Math.sin(a) * rR;
+          if (a === 0) sceneCtx.moveTo(wx, wy);
+          else sceneCtx.lineTo(wx, wy);
+        }
+        sceneCtx.strokeStyle = 'rgba(0, 240, 255, 0.35)';
+        sceneCtx.stroke();
+
+        // Dönen radar tarama çizgisi (Radar sweep line)
+        const sweepAngle = (now * 0.0016) % (Math.PI * 2);
+        sceneCtx.beginPath();
+        sceneCtx.moveTo(rX, rY);
+        sceneCtx.lineTo(rX + Math.cos(sweepAngle) * rR, rY + Math.sin(sweepAngle) * rR);
+        sceneCtx.strokeStyle = 'rgba(0, 255, 220, 0.85)';
+        sceneCtx.shadowColor = '#00f0ff';
+        sceneCtx.shadowBlur = 6;
+        sceneCtx.stroke();
+
+        // Kilitlenmiş hedef pini (Target ping blip + yankı halkası)
+        const pingAngle = 1.15;
+        const pingDist = rR * 0.62;
+        const pingX = rX + Math.cos(pingAngle) * pingDist;
+        const pingY = rY + Math.sin(pingAngle) * pingDist;
+
+        sceneCtx.beginPath();
+        sceneCtx.arc(pingX, pingY, 2.5, 0, Math.PI * 2);
+        sceneCtx.fillStyle = '#39ff14';
+        sceneCtx.shadowColor = '#39ff14';
+        sceneCtx.shadowBlur = 6;
+        sceneCtx.fill();
+
+        const echoR = 3 + (Math.sin(now * 0.008) * 0.5 + 0.5) * 6;
+        sceneCtx.beginPath();
+        sceneCtx.arc(pingX, pingY, echoR, 0, Math.PI * 2);
+        sceneCtx.strokeStyle = 'rgba(57, 255, 20, 0.6)';
+        sceneCtx.lineWidth = 1;
+        sceneCtx.stroke();
+        sceneCtx.restore();
+
+        // Radar yanı telemetri verileri
+        const radTextX = rX + rR + 14;
+        sceneCtx.font = 'bold 10px "Share Tech Mono", monospace';
+        sceneCtx.fillStyle = '#00f0ff';
+        sceneCtx.fillText('POLAR RADAR // SCAN: 60Hz', radTextX, rY - 18);
+
+        drawBadge(sceneCtx, '[ LOCKED ]', radTextX, rY - 4, '#39ff14', '#06240d');
+
+        sceneCtx.font = '9px "Share Tech Mono", monospace';
+        sceneCtx.fillStyle = '#ffffff';
+        sceneCtx.fillText('AZ: 042.8°  EL: +14.2°', radTextX + 70, rY - 4);
+
+        sceneCtx.fillStyle = 'rgba(180, 235, 255, 0.82)';
+        sceneCtx.fillText('RNG: 1,840m  DOPPLER: -12.4m/s', radTextX, rY + 11);
+
+        sceneCtx.font = '8px "Share Tech Mono", monospace';
+        sceneCtx.fillStyle = 'rgba(120, 180, 210, 0.7)';
+        sceneCtx.fillText('FREQ: 1420.4 MHz [UHF-CH4] // DUAL_BAND', radTextX, rY + 23);
+
+        // --- B. ANATOMİ ORGAN ÇAĞRI NOKTALARI VE ÇEŞİTLENDİRİLMİŞ HUD BLOKLARI ---
+        // Piksel centroidleri Sharp ile doğrulanmış birebir koordinatlardır:
         const callouts = [
           {
-            label: '// 01. OPTIC_VISOR [MK.IV]',
-            data: ['FOV: 180° STEREO // REFR: 240Hz', 'TARGET_ACQUISITION: 100% LOCK', 'SPECTRAL: UV / IR / THERMAL'],
-            ox: vX + vSize * 0.495, // Kafa / Optik sensör
-            oy: vY + vSize * 0.235,
-            elbowY: cardY + 54,
-            boxY: cardY + 44
+            title: '// 01. OPTIC_VISOR [MK.IV]',
+            badgeText: '[ 240 FPS ]',
+            badgeFg: '#00f0ff',
+            badgeBg: '#002833',
+            tag: '[01_OPTIC]',
+            ox: vX + vSize * 0.4986, // V1 Optik Göz
+            oy: vY + vSize * 0.2211,
+            row1: 'FOV: 180° STEREO // REFR: 240Hz',
+            row2: 'SPECTRAL: [ UV / IR / THERMAL ]',
+            row3Type: 'bar',
+            row3Label: 'ACQUISITION:  ',
+            row3Bar: '[██████████] 100%',
+            row3Color: '#39ff14'
           },
           {
-            label: '// 02. WING_ARRAY [VECTOR-8]',
-            data: ['THRUST: 4,400 N // DYNAMICS: 99.8%', 'DASH_CHARGE: [ III ] READY', 'AERO_STABILIZER: ACTIVE'],
-            ox: vX + vSize * 0.325, // Üst Kanat Ucu
-            oy: vY + vSize * 0.170,
-            elbowY: cardY + 124,
-            boxY: cardY + 114
+            title: '// 02. WING_ARRAY [VECTOR-8]',
+            badgeText: '[ 4,400 N ]',
+            badgeFg: '#ffaa00',
+            badgeBg: '#332000',
+            tag: '[02_WING]',
+            ox: vX + vSize * 0.3017, // Sol Üst Kanat Ucu
+            oy: vY + vSize * 0.1233,
+            row1: 'DASH CHARGES: [ ◼ ◼ ◼ ] READY',
+            row2: 'VECTOR BIAS: -12.4° // GLIDE: OK',
+            row3Type: 'bar',
+            row3Label: 'STABILIZER:   ',
+            row3Bar: '[████████░░] 84%',
+            row3Color: '#ffaa00'
           },
           {
-            label: '// 03. REFUELLING_CORE [V1]',
-            data: ['FUEL_SOURCE: FRESH_BLOOD', 'ABSORPTION: CONTACT_PLATING', 'CORE_TEMP: 382K // STABLE'],
-            ox: vX + vSize * 0.495, // Göğüs Plakası / Çekirdek
-            oy: vY + vSize * 0.380,
-            elbowY: cardY + 194,
-            boxY: cardY + 184
+            title: '// 03. REFUELLING_CORE [V1]',
+            badgeText: '[ FRESH BLOOD ]',
+            badgeFg: '#ff3344',
+            badgeBg: '#2b060a',
+            tag: '[03_CORE]',
+            ox: vX + vSize * 0.5012, // Göğüs Plakası / Kan Çekirdeği
+            oy: vY + vSize * 0.3295,
+            row1: 'ABSORPTION: CONTACT PLATING (99.4%)',
+            row2: 'CORE TEMP: 382.4 K // STABLE',
+            row3Type: 'bar',
+            row3Label: 'HEMATO-RESERVE: ',
+            row3Bar: '[████████████░░░░] 74%',
+            row3Color: '#ff3344'
           },
           {
-            label: '// 04. MANIPULATOR [FEEDBACKER]',
-            data: ['ACTUATOR: HIGH_TORQUE_SERVO', 'PARRY_WINDOW: 0.18s ARMED', 'KINETIC_OUTPUT: MAXIMUM'],
-            ox: vX + vSize * 0.180, // Sol Kol / Yumruk
-            oy: vY + vSize * 0.340,
-            elbowY: cardY + 264,
-            boxY: cardY + 254
+            title: '// 04. MANIPULATOR [FEEDBACKER]',
+            badgeText: '[ PARRY: 0.18s ]',
+            badgeFg: '#ffffff',
+            badgeBg: '#003344',
+            tag: '[04_HAND]',
+            ox: vX + vSize * 0.1329, // Sol Dışa Açık El
+            oy: vY + vSize * 0.3158,
+            row1: 'SERVO TORQUE: 880 N·m // KINETIC MAX',
+            row2: 'CAPACITOR: 1.20 MJ CHARGED',
+            row3Type: 'text',
+            row3Text: 'HEX: 0x7F40A9 :: PARRY_GATE_READY',
+            row3Color: '#55ccaa'
           },
           {
-            label: '// 05. HYDRAULIC_STRUT [TITANIUM]',
-            data: ['LOAD_CAPACITY: 12,000 N', 'GROUND_SLAM: CHARGED', 'PRESSURE: 340 BAR // NOMINAL'],
-            ox: vX + vSize * 0.380, // Bacak / Hidrolik Eklem
-            oy: vY + vSize * 0.690,
-            elbowY: cardY + 334,
-            boxY: cardY + 324
+            title: '// 05. HYDRAULIC_STRUT [MK.II]',
+            badgeText: '[ 340 BAR ]',
+            badgeFg: '#39ff14',
+            badgeBg: '#06240d',
+            tag: '[05_KNEE]',
+            ox: vX + vSize * 0.4209, // Sol Diz / Hidrolik Eklem
+            oy: vY + vSize * 0.6385,
+            row1: 'LOAD CAPACITY: 14,000 N // TITANIUM',
+            row2: 'GROUND SLAM: ARMED // DAMPING: 98%',
+            row3Type: 'waveform',
+            row3Label: 'RECOIL IMPULSE: ',
+            row3Bar: ' ▂▃▅▆▇ [DAMPENED]',
+            row3Color: '#00f0ff'
           }
         ];
 
-        // Sol paneldeki yazı bloklarının X koordinatı ve genişliği
-        const textBlockX = cardX + 20;
-        const textBlockW = Math.max(160, vX - cardX - 38);
+        const modStartY = rY + rR + 14;
+        const modAvailH = bottomY - modStartY;
+        const modH = modAvailH / 5;
 
-        callouts.forEach((c) => {
-          // Lider Çizgisi: Noktadan açılı çıkıp yatay uzanan HUD kılavuz çizgisi
-          const elbowX = Math.min(c.ox - 24, textBlockX + textBlockW + 18);
+        callouts.forEach((c, i) => {
+          const modBaseY = modStartY + i * modH;
+          const headerY = modBaseY + 12;
+          const lineY = headerY + 4;
+
+          // 1. KUSURSUZ 45° CAD LİDER ÇİZGİSİ (Organ noktasından çıkar, 45° kırılır, başlık altı çizgiye bağlanır)
+          const stubX = c.ox - 10;
+          const dy = c.oy - lineY;
+          const elbowX = Math.max(textRight + 8, stubX - Math.abs(dy));
 
           sceneCtx.save();
-          // Neon parıltılı lider çizgisi
-          sceneCtx.strokeStyle = 'rgba(0, 240, 255, 0.85)';
+          sceneCtx.strokeStyle = 'rgba(0, 240, 255, 0.82)';
           sceneCtx.lineWidth = 1.2;
-          sceneCtx.shadowColor = 'rgba(0, 240, 255, 0.8)';
-          sceneCtx.shadowBlur = 6;
+          sceneCtx.shadowColor = 'rgba(0, 240, 255, 0.7)';
+          sceneCtx.shadowBlur = 5;
 
           sceneCtx.beginPath();
           sceneCtx.moveTo(c.ox, c.oy);
-          sceneCtx.lineTo(elbowX, c.elbowY);
-          sceneCtx.lineTo(textBlockX + textBlockW, c.elbowY);
+          sceneCtx.lineTo(stubX, c.oy);
+          sceneCtx.lineTo(elbowX, lineY);
+          sceneCtx.lineTo(textLeft, lineY);
           sceneCtx.stroke();
 
-          // Başlangıç hedef noktası (Küçük hedef yuvarlağı)
-          sceneCtx.beginPath();
-          sceneCtx.arc(c.ox, c.oy, 2.5, 0, Math.PI * 2);
-          sceneCtx.fillStyle = '#ffffff';
-          sceneCtx.fill();
-          sceneCtx.strokeStyle = '#00f0ff';
-          sceneCtx.lineWidth = 1.5;
-          sceneCtx.stroke();
-
-          // Çizgi ucu küçük terminal karesi
+          // Kırılma dirseğinde küçük tech kare vurgusu
           sceneCtx.fillStyle = '#00f0ff';
-          sceneCtx.fillRect(textBlockX + textBlockW - 2, c.elbowY - 2, 4, 4);
+          sceneCtx.fillRect(elbowX - 2, lineY - 2, 4, 4);
 
-          // Kod / Veri Yazı Bloğu
-          sceneCtx.font = 'bold 10px "Share Tech Mono", monospace';
+          // Sol uç terminal çentiği
+          sceneCtx.fillRect(textLeft - 1, lineY - 3, 2, 6);
+
+          // 2. ORGAN ÇIKIŞ NOKTASINDA HEDEF RETICLE & ETİKET
+          sceneCtx.beginPath();
+          sceneCtx.arc(c.ox, c.oy, 2, 0, Math.PI * 2);
+          sceneCtx.fillStyle = '#ffffff';
+          sceneCtx.shadowColor = '#ffffff';
+          sceneCtx.shadowBlur = 4;
+          sceneCtx.fill();
+
+          sceneCtx.beginPath();
+          sceneCtx.arc(c.ox, c.oy, 4.5, 0, Math.PI * 2);
+          sceneCtx.strokeStyle = '#00f0ff';
+          sceneCtx.lineWidth = 1;
+          sceneCtx.shadowColor = 'rgba(0, 240, 255, 0.8)';
+          sceneCtx.shadowBlur = 6;
+          sceneCtx.stroke();
+
+          sceneCtx.beginPath();
+          sceneCtx.moveTo(c.ox - 7, c.oy); sceneCtx.lineTo(c.ox - 4.5, c.oy);
+          sceneCtx.moveTo(c.ox + 4.5, c.oy); sceneCtx.lineTo(c.ox + 7, c.oy);
+          sceneCtx.moveTo(c.ox, c.oy - 7); sceneCtx.lineTo(c.ox, c.oy - 4.5);
+          sceneCtx.moveTo(c.ox, c.oy + 4.5); sceneCtx.lineTo(c.ox, c.oy + 7);
+          sceneCtx.stroke();
+
+          sceneCtx.font = '8px "Share Tech Mono", monospace';
+          sceneCtx.fillStyle = '#00f0ff';
+          sceneCtx.shadowBlur = 0;
+          sceneCtx.fillText(c.tag, c.ox + 9, c.oy + 3);
+
+          // 3. ÇİZGİ ÜZERİNDE AKAN CANLI IŞIK TANECİĞİ (Animated Photon Pulse Bead)
+          const seg1 = 10;
+          const seg2 = Math.hypot(elbowX - stubX, lineY - c.oy);
+          const seg3 = Math.max(0, elbowX - textLeft);
+          const totalLen = seg1 + seg2 + seg3;
+          const pulseT = ((now * 0.0006 + i * 0.22) % 1.0);
+          const curDist = pulseT * totalLen;
+
+          let px, py;
+          if (curDist < seg1) {
+            const t = curDist / seg1;
+            px = c.ox - t * 10;
+            py = c.oy;
+          } else if (curDist < seg1 + seg2) {
+            const t = (curDist - seg1) / seg2;
+            px = stubX + (elbowX - stubX) * t;
+            py = c.oy + (lineY - c.oy) * t;
+          } else {
+            const t = (curDist - seg1 - seg2) / seg3;
+            px = elbowX - t * (elbowX - textLeft);
+            py = lineY;
+          }
+          sceneCtx.beginPath();
+          sceneCtx.arc(px, py, 2.2, 0, Math.PI * 2);
+          sceneCtx.fillStyle = '#ffffff';
+          sceneCtx.shadowColor = '#00f0ff';
+          sceneCtx.shadowBlur = 8;
+          sceneCtx.fill();
+
+          // 4. KOD / TELEMETRİ YAZI BLOĞU (Çeşitlendirilmiş renkler, ölçüler, göstergeler)
+          sceneCtx.font = 'bold 11px "Share Tech Mono", monospace';
           sceneCtx.fillStyle = '#00f0ff';
           sceneCtx.shadowColor = 'rgba(0, 240, 255, 0.6)';
           sceneCtx.shadowBlur = 4;
-          sceneCtx.fillText(c.label, textBlockX, c.boxY);
+          sceneCtx.fillText(c.title, textLeft + 4, headerY);
           sceneCtx.shadowBlur = 0;
 
+          // Başlık yanı durum rozeti (Status badge)
+          const headerTw = sceneCtx.measureText(c.title).width;
+          drawBadge(sceneCtx, c.badgeText, textLeft + headerTw + 12, headerY, c.badgeFg, c.badgeBg);
+
+          // 1. Satır: Ana parametre
           sceneCtx.font = '9px "Share Tech Mono", monospace';
-          sceneCtx.fillStyle = 'rgba(215, 245, 255, 0.78)';
-          c.data.forEach((lineText, li) => {
-            sceneCtx.fillText(lineText, textBlockX, c.boxY + 12 + li * 10);
-          });
+          sceneCtx.fillStyle = 'rgba(225, 245, 255, 0.9)';
+          sceneCtx.fillText(c.row1, textLeft + 4, lineY + 12);
+
+          // 2. Satır: Alt ölçüm
+          sceneCtx.fillStyle = 'rgba(140, 205, 235, 0.8)';
+          sceneCtx.fillText(c.row2, textLeft + 4, lineY + 23);
+
+          // 3. Satır: Özel widget (Progress bar, hex dump veya waveform)
+          if (c.row3Type === 'bar') {
+            sceneCtx.fillStyle = 'rgba(160, 215, 245, 0.7)';
+            sceneCtx.fillText(c.row3Label, textLeft + 4, lineY + 34);
+            const labelW = sceneCtx.measureText(c.row3Label).width;
+            sceneCtx.fillStyle = c.row3Color;
+            sceneCtx.shadowColor = c.row3Color;
+            sceneCtx.shadowBlur = 4;
+            sceneCtx.fillText(c.row3Bar, textLeft + 4 + labelW, lineY + 34);
+            sceneCtx.shadowBlur = 0;
+          } else if (c.row3Type === 'waveform') {
+            sceneCtx.fillStyle = 'rgba(160, 215, 245, 0.7)';
+            sceneCtx.fillText(c.row3Label, textLeft + 4, lineY + 34);
+            const labelW = sceneCtx.measureText(c.row3Label).width;
+            sceneCtx.fillStyle = c.row3Color;
+            sceneCtx.fillText(c.row3Bar, textLeft + 4 + labelW, lineY + 34);
+          } else if (c.row3Type === 'text') {
+            sceneCtx.fillStyle = c.row3Color;
+            sceneCtx.fillText(c.row3Text, textLeft + 4, lineY + 34);
+          }
 
           sceneCtx.restore();
         });
