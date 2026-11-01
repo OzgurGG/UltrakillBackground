@@ -2,11 +2,11 @@
 
 .reticle-card {
   position: relative;
-  width: 350px;
-  height: 350px;
-  background-color: rgba(2, 2, 2, 0.92);
+  width: min(78vw, 75vh, 520px);
+  height: min(78vw, 75vh, 520px);
+  background-color: rgba(2, 2, 6, 0.92);
   border: 1px solid rgba(255, 34, 34, 0.25);
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.95);
+  box-shadow: 0 0 35px rgba(0, 0, 0, 0.95);
   box-sizing: border-box;
   overflow: hidden;
   display: flex;
@@ -16,49 +16,49 @@
 /* 4 Köşeyi Oluşturan Keskin Kırmızı L Çizgileri */
 .reticle-corner {
   position: absolute;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-color: #ff2222;
   border-style: solid;
   pointer-events: none;
-  filter: drop-shadow(0 0 8px rgba(255, 34, 34, 0.9));
+  filter: drop-shadow(0 0 10px rgba(255, 34, 34, 0.95));
   z-index: 10;
 }
 
 .reticle-tl {
   top: -1px;
   left: -1px;
-  border-width: 3.5px 0 0 3.5px;
+  border-width: 4px 0 0 4px;
 }
 
 .reticle-tr {
   top: -1px;
   right: -1px;
-  border-width: 3.5px 3.5px 0 0;
+  border-width: 4px 4px 0 0;
 }
 
 .reticle-bl {
   bottom: -1px;
   left: -1px;
-  border-width: 0 0 3.5px 3.5px;
+  border-width: 0 0 4px 4px;
 }
 
 .reticle-br {
   bottom: -1px;
   right: -1px;
-  border-width: 0 3.5px 3.5px 0;
+  border-width: 0 4px 4px 0;
 }
 
-/* Arka plan amber veri akışı (Referans görseldeki turuncu/amber kod efekti) */
+/* Arka plan veri çizgileri */
 .reticle-bg-telemetry {
   position: absolute;
-  inset: 28px 16px 16px;
+  inset: 32px 18px 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   font-family: 'Share Tech Mono', monospace;
   font-size: 11px;
-  color: rgba(235, 125, 45, 0.22);
+  color: rgba(0, 240, 255, 0.14);
   letter-spacing: 1px;
   pointer-events: none;
   user-select: none;
@@ -70,25 +70,26 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px 6px;
-  border-bottom: 1px solid rgba(255, 34, 34, 0.18);
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid rgba(0, 240, 255, 0.22);
   font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 1.5px;
-  color: #ff9944;
+  color: #00f0ff;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.7);
   position: relative;
   z-index: 5;
 }
 
 .reticle-dot {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background-color: #43b581;
-  box-shadow: 0 0 6px #43b581;
+  background-color: #00f0ff;
+  box-shadow: 0 0 8px #00f0ff;
 }
 
-/* İçerik Alanı */
+/* İçerik Alanı: LED Anatomi */
 .reticle-content {
   position: relative;
   z-index: 4;
@@ -98,16 +99,17 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  padding: 10px;
+  padding: 16px;
 }
 
-/* CRT Aperture Grille & Scanline Maskesi */
+/* Bütün Karenin İçine Uygulanan Tam Ekran Filtre (Aperture Grille + Scanlines + Vignette) */
 .reticle-scanline-mask {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 8;
   background: 
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.75) 100%),
     repeating-linear-gradient(
       90deg,
       rgba(0, 0, 0, 0) 0px,
@@ -119,14 +121,14 @@
       0deg,
       rgba(0, 0, 0, 0) 0px,
       rgba(0, 0, 0, 0) 1px,
-      rgba(0, 0, 0, 0.18) 1px,
-      rgba(0, 0, 0, 0.18) 2px
+      rgba(0, 0, 0, 0.2) 1px,
+      rgba(0, 0, 0, 0.2) 2px
     );
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .reticle-card {
-    width: 290px;
-    height: 290px;
+    width: 320px;
+    height: 320px;
   }
 }

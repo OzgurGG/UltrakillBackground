@@ -137,8 +137,8 @@ export default function CRTTerminal() {
     avatarImg.src = profilRef.current.avatarUrl;
 
     // Vitruvian V1 Optik Efektli Çizim (Chromatic Aberration + Multi-Bloom + Aperture Grille)
-    const vitruvianOpticImg = new Image();
-    vitruvianOpticImg.src = '/vitruvian-v1-optic.png';
+    const vitruvianLedImg = new Image();
+    vitruvianLedImg.src = '/vitruvian-v1-led-cyan.png';
 
     // 4. Three.js Sahnesi ve WebGL Renderer
     const scene = new THREE.Scene();
@@ -306,89 +306,112 @@ export default function CRTTerminal() {
       sceneCtx.drawImage(mazeCanvas, 0, HEADER_HEIGHT, width, Math.max(10, height - HEADER_HEIGHT));
 
 
-      // D. KÖŞEYE KARE PANEL (CYBERPUNK RETICLE CARD + OPTIK VITRUVIAN V1)
-      const cardSize = Math.min(350, Math.min(width - 48, height - HEADER_HEIGHT - 48));
-      if (cardSize > 140) {
-        const cardX = width - cardSize - 28;
-        const cardY = height - cardSize - 28;
+      // D. MERKEZ KARE PANEL (CYBERPUNK RETICLE CARD + LED ANATOMI + TAM FILTRE)
+      const bodyH = Math.max(10, height - HEADER_HEIGHT);
+      const cardSize = Math.min(width * 0.72, bodyH * 0.85, 520);
+      const cardX = (width - cardSize) / 2;
+      const cardY = HEADER_HEIGHT + (bodyH - cardSize) / 2;
 
+      if (cardSize > 140) {
         // 1. Panel Zemin (Derin saf siyah cam zemin)
-        sceneCtx.fillStyle = 'rgba(2, 2, 2, 0.92)';
+        sceneCtx.fillStyle = 'rgba(2, 2, 6, 0.92)';
         sceneCtx.fillRect(cardX, cardY, cardSize, cardSize);
 
-        // 2. Panel İnce HUD Çerçevesi
-        sceneCtx.strokeStyle = 'rgba(255, 34, 34, 0.25)';
-        sceneCtx.lineWidth = 1;
-        sceneCtx.strokeRect(cardX, cardY, cardSize, cardSize);
-
-        // 3. Arka Plan Amber/Bakır Fosfor Kod Akışı (Referans görseldeki turuncu kodlar)
+        // 2. KARENİN İÇİNE TAM EKRAN FİLTRE (Aperture Grille, Scanline, Cam Vignette)
         sceneCtx.save();
         sceneCtx.beginPath();
-        sceneCtx.rect(cardX + 4, cardY + 4, cardSize - 8, cardSize - 8);
+        sceneCtx.rect(cardX, cardY, cardSize, cardSize);
         sceneCtx.clip();
 
+        // Cam Köşe Vignette (İçbükey derinlik gölgesi)
+        const vigGrad = sceneCtx.createRadialGradient(
+          cardX + cardSize / 2, cardY + cardSize / 2, cardSize * 0.25,
+          cardX + cardSize / 2, cardY + cardSize / 2, cardSize * 0.72
+        );
+        vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        vigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.78)');
+        sceneCtx.fillStyle = vigGrad;
+        sceneCtx.fillRect(cardX, cardY, cardSize, cardSize);
+
+        // Yatay Scanlines ve Dikey Izgara (Referans görseldeki Trinitron fosfor ağı)
+        sceneCtx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+        for (let y = cardY; y < cardY + cardSize; y += 3) {
+          sceneCtx.fillRect(cardX, y, cardSize, 1.2);
+        }
+        for (let x = cardX; x < cardX + cardSize; x += 3) {
+          sceneCtx.fillRect(x, cardY, 1.2, cardSize);
+        }
+
+        // Arka Plan İnce Telemetri Verileri (Hafif cyan veri çizgileri)
         sceneCtx.font = '10px "Share Tech Mono", monospace';
-        sceneCtx.fillStyle = 'rgba(235, 125, 45, 0.22)';
+        sceneCtx.fillStyle = 'rgba(0, 240, 255, 0.14)';
         const codeSnippets = [
           '0x7F40 :: LOAD_SEC_01 [V1_KERNEL]',
           'TRACE.SYS.ACTIVE >> PROTO_ONLINE',
-          'MEMORY::ALLOC(0x3B82, 0x99A1)',
-          'HEURISTIC_MATRIX_RUNNER >> OK',
-          'FEED_SRC: ULTRAKILL_REMNANT',
-          'MACHINE_SIN :: SANCTUM_DENIED',
-          'SIGNAL.RX [48000 Hz, 32-BIT]',
-          'TARGET ACQUISITION: 100% LOCK',
+          'OPTIC.LED.PIPELINE >> EMISSION_100%',
           'BLOOD_IS_FUEL :: HELL_IS_FULL'
         ];
-        const lineSpacing = (cardSize - 36) / codeSnippets.length;
+        const lineSpacing = (cardSize - 40) / (codeSnippets.length + 1);
         for (let i = 0; i < codeSnippets.length; i++) {
-          sceneCtx.fillText(codeSnippets[i], cardX + 16, cardY + 36 + i * lineSpacing);
+          sceneCtx.fillText(codeSnippets[i], cardX + 20, cardY + 44 + i * lineSpacing);
         }
-        sceneCtx.restore();
 
-        // 4. Vitruvian V1 Optik Efektli Karakteri (Bloom + Kromatik Aberasyon + Izgara)
-        if (vitruvianOpticImg.complete && vitruvianOpticImg.naturalWidth > 0) {
-          const imgPad = 22;
+        // 3. LED ANATOMİ ÇİZİMİ (Neon LED Post-Processing Işıltısı)
+        if (vitruvianLedImg.complete && vitruvianLedImg.naturalWidth > 0) {
+          const imgPad = 24;
           const imgSize = cardSize - imgPad * 2;
           const imgX = cardX + imgPad;
           const imgY = cardY + imgPad + 6;
 
           sceneCtx.save();
-          // Çift katmanlı optik parıltı (Lens Bloom & Difüzyon)
-          sceneCtx.shadowColor = 'rgba(255, 255, 255, 0.70)';
-          sceneCtx.shadowBlur = 14;
+          // Çok kademeli LED yayılımı (Bloom)
+          sceneCtx.shadowColor = 'rgba(0, 240, 255, 0.85)';
+          sceneCtx.shadowBlur = 18;
           sceneCtx.globalCompositeOperation = 'screen';
-          sceneCtx.drawImage(vitruvianOpticImg, imgX, imgY, imgSize, imgSize);
+          sceneCtx.drawImage(vitruvianLedImg, imgX, imgY, imgSize, imgSize);
+
+          // İkinci geçiş: Sıcak beyaz çekirdek yoğunluğu
+          sceneCtx.shadowColor = 'rgba(255, 255, 255, 0.95)';
+          sceneCtx.shadowBlur = 6;
+          sceneCtx.drawImage(vitruvianLedImg, imgX, imgY, imgSize, imgSize);
           sceneCtx.restore();
         }
 
-        // 5. Panel Üst Başlık & Amber Durum İmleri
-        sceneCtx.font = 'bold 11px "Share Tech Mono", monospace';
-        sceneCtx.fillStyle = '#ff9944';
-        sceneCtx.fillText('[ UNIT: V1 // VITRUVIAN ]', cardX + 14, cardY + 20);
+        sceneCtx.restore(); // clip sonu
 
-        // Yeşil aktiflik göstergesi
+        // 4. Panel Üst Başlık & Cyan Durum İmleri
+        sceneCtx.font = 'bold 12px "Share Tech Mono", monospace';
+        sceneCtx.fillStyle = '#00f0ff';
+        sceneCtx.shadowColor = 'rgba(0, 240, 255, 0.7)';
+        sceneCtx.shadowBlur = 6;
+        sceneCtx.fillText('[ UNIT: V1 // LED_ANATOMY ]', cardX + 16, cardY + 22);
+        sceneCtx.shadowBlur = 0;
+
+        // Cyan LED aktiflik göstergesi
         sceneCtx.beginPath();
-        sceneCtx.arc(cardX + cardSize - 18, cardY + 16, 4, 0, Math.PI * 2);
-        sceneCtx.fillStyle = '#43b581';
+        sceneCtx.arc(cardX + cardSize - 20, cardY + 18, 4.5, 0, Math.PI * 2);
+        sceneCtx.fillStyle = '#00f0ff';
+        sceneCtx.shadowColor = '#00f0ff';
+        sceneCtx.shadowBlur = 8;
         sceneCtx.fill();
+        sceneCtx.shadowBlur = 0;
 
         // Başlık altı ayırıcı çizgi
-        sceneCtx.strokeStyle = 'rgba(255, 34, 34, 0.18)';
+        sceneCtx.strokeStyle = 'rgba(0, 240, 255, 0.25)';
         sceneCtx.lineWidth = 1;
         sceneCtx.beginPath();
-        sceneCtx.moveTo(cardX + 12, cardY + 26);
-        sceneCtx.lineTo(cardX + cardSize - 12, cardY + 26);
+        sceneCtx.moveTo(cardX + 14, cardY + 28);
+        sceneCtx.lineTo(cardX + cardSize - 14, cardY + 28);
         sceneCtx.stroke();
 
-        // 6. 4 Köşe Keskin Parlak Kırmızı L-Braketleri (┌ ┐ └ ┘)
-        const bLen = 28; // Braket kol uzunluğu
-        const bThick = 3.5; // Braket et kalınlığı
+        // 5. 4 Köşe Keskin Parlak Kırmızı L-Braketleri (┌ ┐ └ ┘)
+        const bLen = 32; // Braket kol uzunluğu
+        const bThick = 4; // Braket et kalınlığı
         sceneCtx.strokeStyle = '#ff2222';
         sceneCtx.lineWidth = bThick;
         sceneCtx.lineCap = 'square';
-        sceneCtx.shadowColor = 'rgba(255, 34, 34, 0.9)';
-        sceneCtx.shadowBlur = 10;
+        sceneCtx.shadowColor = 'rgba(255, 34, 34, 0.95)';
+        sceneCtx.shadowBlur = 12;
 
         // Sol Üst (┌)
         sceneCtx.beginPath();

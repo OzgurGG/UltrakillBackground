@@ -2,19 +2,21 @@ import React from 'react';
 import './VitruvianV1.css';
 
 /**
- * VitruvianV1 - Arka plansız, beyaz çizgili ve diffuse parıltılı V1 Vitruvian Man Bileşeni
+ * VitruvianV1 - LED Işıklandırmalı V1 Çizimi
+ * - Neon LED Post-Processing Işıltısı
+ * - Yüksek Parlaklıkta Çekirdek + Neon LED Aurası
  */
-export default function VitruvianV1({ className = '', glow = true, size }) {
+export default function VitruvianV1({ className = '', led = true, color = 'cyan', size }) {
   const style = size ? { width: size, height: size } : {};
+  const imageSrc = color === 'red' ? '/vitruvian-v1-led-red.png' : '/vitruvian-v1-led-cyan.png';
 
   return (
-    <div className={`vitruvian-v1-container ${glow ? 'diffuse-glow' : ''} ${className}`} style={style}>
+    <div className={`vitruvian-v1-container ${led ? 'led-fx' : ''} ${className}`} style={style}>
       <img
-        src="/vitruvian-v1-white.png"
-        alt="Vitruvian Man featuring V1"
+        src={imageSrc}
+        alt="Vitruvian Man featuring V1 with LED neon glow"
         className="vitruvian-v1-img"
       />
     </div>
   );
 }
-
