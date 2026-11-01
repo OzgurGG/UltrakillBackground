@@ -400,14 +400,14 @@ export function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
   }
 }
 
-export function drawNeonBrackets(ctx, x, y, w, h, bLen = 34, bThick = 4) {
+export function drawNeonBrackets(ctx, x, y, w, h, bLen = 34, bThick = 4, color = '#ff2222', glowColor = 'rgba(255, 34, 34, 0.95)') {
   const arm = Math.min(bLen, Math.floor(h * 0.35), Math.floor(w * 0.35));
   
   ctx.save();
-  ctx.strokeStyle = '#ff2222';
+  ctx.strokeStyle = color;
   ctx.lineWidth = bThick;
   ctx.lineCap = 'square';
-  ctx.shadowColor = 'rgba(255, 34, 34, 0.95)';
+  ctx.shadowColor = glowColor;
   ctx.shadowBlur = 16;
 
   // Sol Ust (┌)
@@ -454,3 +454,4 @@ export function drawNeonBrackets(ctx, x, y, w, h, bLen = 34, bThick = 4) {
 
   ctx.restore();
 }
+

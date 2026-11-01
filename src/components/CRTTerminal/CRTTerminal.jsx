@@ -71,12 +71,23 @@ export default function CRTTerminal() {
     avatarImg.crossOrigin = 'anonymous';
     avatarImg.src = profilRef.current.avatarUrl;
 
-    // Vitruvian V1 Optik Efektli Cizim
+    // Vitruvian V1 Optik Efektli Cizim (Cyan & Kirmizi Alarm Halleri)
     const vitruvianLedImg = new Image();
     vitruvianLedImg.src = '/vitruvian-v1-led-cyan.png';
 
+    const vitruvianRedImg = new Image();
+    vitruvianRedImg.src = '/vitruvian-v1-led-red.png';
+
     const zineTextureImg = new Image();
     zineTextureImg.src = '/switch-zine-texture.png';
+
+    // Goz Anomali Videosu (Hata / Meltdown aninda SWITCH arkasinda doner)
+    const eyeVideo = document.createElement('video');
+    eyeVideo.src = '/eye-anomaly.mp4';
+    eyeVideo.muted = true;
+    eyeVideo.playsInline = true;
+    eyeVideo.preload = 'auto';
+    eyeVideo.loop = true;
 
     if (document.fonts) {
       document.fonts.load('64px "VCR OSD Mono"');
@@ -100,8 +111,10 @@ export default function CRTTerminal() {
     spCtx.fillRect(2, 0, 1, 3);
     let scanPattern = null;
 
-    // 1. Vitruvian Canvas (Cyan Bloom + Crisp White Core - 0ms per-frame CPU Blur)
+    // 1. Vitruvian Canvas (Cyan Bloom & Kirmizi Meltdown Alarm Halleri)
     let cachedVitruvianCanvas = null;
+    let cachedVitruvianRedCanvas = null;
+
     function bakeVitruvian() {
       if (!vitruvianLedImg.complete || vitruvianLedImg.naturalWidth === 0) return;
       const size = 1080;
@@ -120,6 +133,25 @@ export default function CRTTerminal() {
     }
     vitruvianLedImg.onload = bakeVitruvian;
     if (vitruvianLedImg.complete && vitruvianLedImg.naturalWidth > 0) bakeVitruvian();
+
+    function bakeVitruvianRed() {
+      if (!vitruvianRedImg.complete || vitruvianRedImg.naturalWidth === 0) return;
+      const size = 1080;
+      const pad = 44;
+      const c = document.createElement('canvas');
+      c.width = size + pad * 2;
+      c.height = size + pad * 2;
+      const cCtx = c.getContext('2d');
+      cCtx.shadowColor = 'rgba(255, 30, 30, 0.95)';
+      cCtx.shadowBlur = 22;
+      cCtx.drawImage(vitruvianRedImg, pad, pad, size, size);
+      cCtx.shadowColor = 'rgba(255, 220, 220, 0.95)';
+      cCtx.shadowBlur = 8;
+      cCtx.drawImage(vitruvianRedImg, pad, pad, size, size);
+      cachedVitruvianRedCanvas = c;
+    }
+    vitruvianRedImg.onload = bakeVitruvianRed;
+    if (vitruvianRedImg.complete && vitruvianRedImg.naturalWidth > 0) bakeVitruvianRed();
 
     // 2. Sol Header Banner Canvas (Zine Doku + SWITCH + Kirmizi Braketler)
     let cachedBannerCanvas = null;
@@ -308,6 +340,22 @@ export default function CRTTerminal() {
         currentLines = currentEvt.lines;
       }
 
+      // Meltdown kontrolu: Tirad monologu bittikten sonra baslayan hata firtinasi (Clear oncesi)
+      const isMeltdownActive = typeState.isTiradeActive && (typeState.lineIdx >= PEPSI_DIALOGUE_SRC.length);
+
+      // Goz Anomali Videosu Yonetimi: Meltdown'da baslar, ekrana clear atildiginda durup sifirlanir
+      if (isMeltdownActive) {
+        if (eyeVideo.paused) {
+          eyeVideo.currentTime = 0;
+          eyeVideo.play().catch(() => {});
+        }
+      } else {
+        if (!eyeVideo.paused) {
+          eyeVideo.pause();
+          eyeVideo.currentTime = 0;
+        }
+      }
+
       if (now >= typeState.pauseUntil) {
         terminalDirty = true;
         if (currentEvt.mode === 'tirade') {
@@ -322,10 +370,14 @@ export default function CRTTerminal() {
             typeState.charIdx = 0;
 
             if (typeState.lineIdx >= tiradeItems.length) {
-              typeState.completedLines = []; // Ekrani sifirla
+              typeState.completedLines = []; // Ekrani sifirla (CLEAR)
               typeState.lineIdx = 0;
               typeState.charIdx = 0;
               typeState.isTiradeActive = false;
+              if (!eyeVideo.paused) {
+                eyeVideo.pause();
+                eyeVideo.currentTime = 0;
+              }
               typeState.pauseUntil = now + 900;
               typeState.eventIdx = (typeState.eventIdx + 1) % REGULAR_EVENTS.length;
             } else {
@@ -460,10 +512,11 @@ export default function CRTTerminal() {
       sceneCtx.lineWidth = 2;
       sceneCtx.stroke();
 
-      // Logo: SWITCH
-      sceneCtx.fillStyle = '#ff3b3b';
+      // Logo: SWITCH (Meltdown glitch etkisi)
+      const headerGlitchX = isMeltdownActive ? Math.round((Math.random() - 0.5) * 5) : 0;
+      sceneCtx.fillStyle = isMeltdownActive ? ((Math.random() < 0.25) ? '#ffffff' : '#ff1a1a') : '#ff3b3b';
       sceneCtx.font = 'bold 38px "Share Tech Mono", monospace';
-      sceneCtx.fillText('SWITCH', avatarCenterX + 44, avatarCenterY + 12);
+      sceneCtx.fillText('SWITCH', avatarCenterX + 44 + headerGlitchX, avatarCenterY + 12);
 
       // Muzik / Spotify Bilgisi
       if (p.spotify) {
@@ -501,7 +554,7 @@ export default function CRTTerminal() {
       sceneCtx.lineTo(HEADER_LEFT_WIDTH, HEADER_HEIGHT);
       sceneCtx.stroke();
 
-      sceneCtx.strokeStyle = '#661414';
+      sceneCtx.strokeStyle = isMeltdownActive ? '#ff1414' : '#661414';
       sceneCtx.lineWidth = 2;
       sceneCtx.beginPath();
       sceneCtx.moveTo(0, HEADER_HEIGHT);
@@ -521,18 +574,53 @@ export default function CRTTerminal() {
       const boxX = width - padX - boxW;
       const boxY = HEADER_HEIGHT + padY;
 
-      // D1. SOL TARAF: UST YATAY BASLIK BANNERI (Tek cagrida GPU blit)
+      // D1. SOL TARAF: UST YATAY BASLIK BANNERI (Meltdown'da Goz Videosu + SWITCH)
       const rectX = padX;
       const rectY = boxY;
       const rectW = Math.max(50, (boxX - padX) - rectX);
       const rectH = Math.min(135, Math.max(88, Math.round(boxH * 0.20)));
 
       if (rectW > 60 && rectH > 40) {
-        if (cachedBannerCanvas) {
-          sceneCtx.drawImage(cachedBannerCanvas, rectX, rectY);
-        } else {
-          sceneCtx.fillStyle = '#121316';
+        if (isMeltdownActive && eyeVideo.readyState >= 2) {
+          sceneCtx.save();
+          sceneCtx.beginPath();
+          sceneCtx.rect(rectX, rectY, rectW, rectH);
+          sceneCtx.clip();
+
+          // 1. Goz Videosu (Goz acilisi video dokusu)
+          const vw = eyeVideo.videoWidth || 720;
+          const vh = eyeVideo.videoHeight || 480;
+          const scale = Math.max(rectW / vw, rectH / vh);
+          const dw = vw * scale;
+          const dh = vh * scale;
+          const dx = rectX + (rectW - dw) / 2;
+          const dy = rectY + (rectH - dh) / 2;
+          sceneCtx.drawImage(eyeVideo, dx, dy, dw, dh);
+
+          // 2. Hafif karartma ve kontrast katmani
+          sceneCtx.fillStyle = 'rgba(0, 0, 0, 0.35)';
           sceneCtx.fillRect(rectX, rectY, rectW, rectH);
+
+          // 3. 'SWITCH' Yazisi: VCR OSD Mono fontu ile gozun onunde stabil, net ve parildayarak durur
+          const fontSize = Math.min(Math.round(rectH * 0.42), Math.round(rectW * 0.16));
+          sceneCtx.font = `bold ${fontSize}px "VCR OSD Mono", monospace`;
+          sceneCtx.textAlign = 'center';
+          sceneCtx.textBaseline = 'middle';
+          sceneCtx.fillStyle = '#ede8dc';
+          sceneCtx.shadowColor = 'rgba(237, 232, 220, 0.75)';
+          sceneCtx.shadowBlur = 10;
+          sceneCtx.fillText('SWITCH', rectX + rectW / 2, rectY + rectH / 2);
+
+          // 4. Kose kirmizi neon braketler (SWITCH kutusu tamamen stabil ve net kalir)
+          drawNeonBrackets(sceneCtx, rectX, rectY, rectW, rectH, 22, 3);
+          sceneCtx.restore();
+        } else {
+          if (cachedBannerCanvas) {
+            sceneCtx.drawImage(cachedBannerCanvas, rectX, rectY);
+          } else {
+            sceneCtx.fillStyle = '#121316';
+            sceneCtx.fillRect(rectX, rectY, rectW, rectH);
+          }
         }
       }
 
@@ -648,45 +736,95 @@ export default function CRTTerminal() {
         const chipY = boxY + 14;
 
         sceneCtx.save();
-        sceneCtx.fillStyle = 'rgba(0, 18, 30, 0.75)';
-        sceneCtx.fillRect(chipX, chipY - 10, chipW, chipH);
-        sceneCtx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
-        sceneCtx.lineWidth = 1;
-        sceneCtx.strokeRect(chipX, chipY - 10, chipW, chipH);
+        if (isMeltdownActive) {
+          sceneCtx.fillStyle = 'rgba(40, 4, 8, 0.88)';
+          sceneCtx.fillRect(chipX, chipY - 10, chipW, chipH);
+          sceneCtx.strokeStyle = '#ff2222';
+          sceneCtx.lineWidth = 1;
+          sceneCtx.strokeRect(chipX, chipY - 10, chipW, chipH);
 
-        const pulseAlpha = Math.sin(now * 0.007) * 0.4 + 0.6;
-        sceneCtx.beginPath();
-        sceneCtx.arc(chipX + 8, chipY - 2.5, 2.5, 0, Math.PI * 2);
-        sceneCtx.fillStyle = `rgba(0, 240, 255, ${pulseAlpha})`;
-        sceneCtx.fill();
+          const pulseAlert = Math.sin(now * 0.02) * 0.4 + 0.6;
+          sceneCtx.beginPath();
+          sceneCtx.arc(chipX + 8, chipY - 2.5, 2.5, 0, Math.PI * 2);
+          sceneCtx.fillStyle = `rgba(255, 30, 30, ${pulseAlert})`;
+          sceneCtx.fill();
 
-        sceneCtx.font = '9px "Share Tech Mono", monospace';
-        sceneCtx.fillStyle = '#00f0ff';
-        const tickVal = Math.floor(now * 0.06) % 99999;
-        sceneCtx.fillText(`TICK:${tickVal.toString().padStart(5, '0')}  SYS:60Hz`, chipX + 16, chipY);
+          sceneCtx.font = 'bold 9px "Share Tech Mono", monospace';
+          sceneCtx.fillStyle = '#ff3333';
+          sceneCtx.fillText(`[ANOMALY: 0xDEAD]  ERR_PANIC`, chipX + 16, chipY);
+        } else {
+          sceneCtx.fillStyle = 'rgba(0, 18, 30, 0.75)';
+          sceneCtx.fillRect(chipX, chipY - 10, chipW, chipH);
+          sceneCtx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
+          sceneCtx.lineWidth = 1;
+          sceneCtx.strokeRect(chipX, chipY - 10, chipW, chipH);
+
+          const pulseAlpha = Math.sin(now * 0.007) * 0.4 + 0.6;
+          sceneCtx.beginPath();
+          sceneCtx.arc(chipX + 8, chipY - 2.5, 2.5, 0, Math.PI * 2);
+          sceneCtx.fillStyle = `rgba(0, 240, 255, ${pulseAlpha})`;
+          sceneCtx.fill();
+
+          sceneCtx.font = '9px "Share Tech Mono", monospace';
+          sceneCtx.fillStyle = '#00f0ff';
+          const tickVal = Math.floor(now * 0.06) % 99999;
+          sceneCtx.fillText(`TICK:${tickVal.toString().padStart(5, '0')}  SYS:60Hz`, chipX + 16, chipY);
+        }
         sceneCtx.restore();
 
-        // 4. ANATOMI CIZIMI (Onceden hesaplanmis GPU dokusu)
+        // 4. ANATOMI CIZIMI (Meltdown aninda kirmizi alarm + optik jitter)
         const vSize = Math.round(boxH * 1.076);
         const vY = Math.round(boxY - vSize * (32 / 1080));
         const vX = Math.round(boxX + boxW - vSize * (1036 / 1080));
 
-        if (cachedVitruvianCanvas) {
+        const vitruvianToDraw = isMeltdownActive
+          ? (cachedVitruvianRedCanvas || cachedVitruvianCanvas)
+          : cachedVitruvianCanvas;
+
+        if (vitruvianToDraw) {
           const vPad = Math.round(vSize * (44 / 1080));
+          const vGlitchX = isMeltdownActive ? Math.round((Math.random() - 0.5) * 8) : 0;
           sceneCtx.save();
           sceneCtx.globalCompositeOperation = 'screen';
           sceneCtx.drawImage(
-            cachedVitruvianCanvas,
-            vX - vPad, vY - vPad,
+            vitruvianToDraw,
+            vX - vPad + vGlitchX, vY - vPad,
             vSize + vPad * 2, vSize + vPad * 2
           );
+
+          if (isMeltdownActive && Math.random() < 0.35) {
+            sceneCtx.globalAlpha = 0.55;
+            sceneCtx.drawImage(
+              vitruvianToDraw,
+              vX - vPad - 6, vY - vPad,
+              vSize + vPad * 2, vSize + vPad * 2
+            );
+          }
           sceneCtx.restore();
+        }
+
+        // 5. Meltdown Yatay Scanline Yirtilmalari (Glitch Tears)
+        if (isMeltdownActive && Math.random() < 0.45) {
+          const tearY = boxY + Math.random() * (boxH - 24);
+          const tearH = 3 + Math.random() * 14;
+          const tearShift = Math.round((Math.random() - 0.5) * 24);
+          try {
+            sceneCtx.drawImage(
+              sceneCanvas,
+              boxX, tearY, boxW, tearH,
+              boxX + tearShift, tearY, boxW, tearH
+            );
+            sceneCtx.fillStyle = 'rgba(255, 30, 50, 0.16)';
+            sceneCtx.fillRect(boxX, tearY, boxW, tearH);
+          } catch (e) {}
         }
 
         sceneCtx.restore(); // clip sonu
 
         // 4 KOSE PARLAK KIRMIZI L-BRAKETLERI
-        if (cachedRightBracketsCanvas) {
+        if (isMeltdownActive && Math.random() < 0.28) {
+          drawNeonBrackets(sceneCtx, boxX, boxY, boxW, boxH, 34, 4, '#ffffff', 'rgba(255, 255, 255, 0.95)');
+        } else if (cachedRightBracketsCanvas) {
           sceneCtx.drawImage(cachedRightBracketsCanvas, boxX - 12, boxY - 12);
         } else {
           drawNeonBrackets(sceneCtx, boxX, boxY, boxW, boxH, 34, 4);
@@ -705,9 +843,32 @@ export default function CRTTerminal() {
 
     rafId = requestAnimationFrame(renderLoop);
 
+    // Hizli onizleme ve test icin klavye kisayolu (Ctrl + Shift + E)
+    const triggerMeltdownTest = () => {
+      typeState.isTiradeActive = true;
+      typeState.lineIdx = PEPSI_DIALOGUE_SRC.length;
+      typeState.charIdx = 0;
+      typeState.pauseUntil = 0;
+      terminalDirty = true;
+    };
+    window.__triggerMeltdown = triggerMeltdownTest;
+
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === 'KeyE') {
+        triggerMeltdownTest();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('keydown', handleKeyDown);
+      delete window.__triggerMeltdown;
+      if (!eyeVideo.paused) {
+        eyeVideo.pause();
+      }
+      eyeVideo.src = '';
       
       if (destroyMaze) destroyMaze();
       if (destroyMatrix) destroyMatrix();

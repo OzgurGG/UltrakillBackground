@@ -29,30 +29,32 @@ export const PEPSI_DIALOGUE_SRC = [
 
 // Tirad Sonrasi Zivanadan Cikan Cilgin Hata Firtinasi (Apocalyptic Meltdown Storm)
 export const PEPSI_MELTDOWN_SRC = [
-  { type: "error", msg: "█ FATAL_EXCEPTION: SANITY_CHECK_FAILED (0x0000DEAD) █", delay: 90 },
-  { type: "error", msg: "Uncaught RealityMismatchError: User requested PEPSI. Machine cannot dispense beverage.", delay: 70 },
-  { type: "stack", msg: "  at evaluateHumanCondition (kernel/psyche.rs:404:12)", delay: 30 },
-  { type: "stack", msg: "  at recursiveParanoiaLoop (v1/allocator.ts:666:9)", delay: 30 },
-  { type: "stack", msg: "  at processTicksAndRejections (task_queues:95:5)", delay: 30 },
-  { type: "panic", msg: "[FATAL] KERNEL INTEGRITY BREACHED: SIGNAL 11 (SIGSEGV)", delay: 60 },
-  { type: "panic", msg: "[CRIT] SENSORY_OVERFLOW DETECTED ON NODE 0xFA (ALL CORES PINNED 100%)", delay: 50 },
-  { type: "panic", msg: "[PANIC] VIRTUAL_MEMORY_PANIC: PAGE_FAULT_IN_NONPAGED_AREA", delay: 50 },
-  { type: "hex",   msg: "0xDEAD00:  FF FF FF FF  00 00 00 00  DE AD BE EF  7F FF FF FF  |????????........|", delay: 40 },
-  { type: "hex",   msg: "0xDEAD10:  50 45 50 53  49 20 4E 4F  54 20 46 4F  55 4E 44 21  |PEPSI NOT FOUND!|", delay: 40 },
-  { type: "hex",   msg: "0xDEAD20:  21 21 21 21  21 21 21 21  21 21 21 21  21 21 21 21  |!!!!!!!!!!!!!!!!|", delay: 40 },
-  { type: "error", msg: "█ EMERGENCY COREDUMP: REGISTER TRACE █", delay: 50 },
-  { type: "trace", msg: "RAX: 0x0000000000000000  RBX: 0xDEADBEEFCAFE0001", delay: 25 },
-  { type: "trace", msg: "RCX: 0xFFFFFFFFFFFFFFFF  RDX: 0x00007FFFFFFFFFFF", delay: 25 },
-  { type: "trace", msg: "RSI: 0x0000000000000042  RDI: 0x00000000PEPSI000", delay: 25 },
-  { type: "trace", msg: "RIP: 0x0000000000401337  RFL: 0x0000000000010286", delay: 25 },
-  { type: "panic", msg: "[CRIT] WATCHDOG TIMEOUT: BUS CONTROLLER LOCKUP DETECTED", delay: 40 },
-  { type: "panic", msg: "[OVERVOLT] CORE OVERVOLTAGE TRIP: 2.18V (LIMIT: 1.25V)", delay: 40 },
-  { type: "panic", msg: "[OVERHEAT] THERMAL RUNAWAY: SENSOR T_JUNCTION @ 108.4°C [CRITICAL]", delay: 40 },
-  { type: "panic", msg: "[HARDWARE] EXCEPTION: CORRUPTING SECTOR MAP...", delay: 40 },
-  { type: "error", msg: "█ SYSTEM IN COMA: ESCALATING PRIVILEGE ESCAPE DETECTED █", delay: 70 },
-  { type: "error", msg: "KERNEL PANIC: ATTEMPTED TO KILL INIT! exitcode=0x0000000b", delay: 60 },
-  { type: "error", msg: "HALTING ALL THREADS... [HARD RESET TRIGGERED]", delay: 70 },
-  { type: "reset", msg: "█ SYSTEM HALTED: CLEARING DISPLAY BUFFER AND REBOOTING... █", delay: 1400 },
+  { type: "error", msg: "█ FATAL_EXCEPTION: SANITY_CHECK_FAILED (0x0000DEAD) █", delay: 110 },
+  { type: "error", msg: "Uncaught RealityMismatchError: User requested PEPSI. Machine cannot dispense beverage.", delay: 90 },
+  { type: "panic", msg: "[CRIT] SENSORY_OVERFLOW DETECTED ON NODE 0xFA (ALL CORES PINNED 100%)", delay: 70 },
+  { type: "panic", msg: "[ANOMALY] OCULAR_SUBSYSTEM_TAKEOVER: UNIDENTIFIED OPTIC PROCESS ATTACHED", delay: 90 },
+  { type: "panic", msg: "[CRIT] RETINAL SYNAPSE ENGAGED: THE EYE IS AWAKENING", delay: 100 },
+  { type: "stack", msg: "  at evaluateHumanCondition (kernel/psyche.rs:404:12)", delay: 35 },
+  { type: "stack", msg: "  at recursiveParanoiaLoop (v1/allocator.ts:666:9)", delay: 35 },
+  { type: "stack", msg: "  at processTicksAndRejections (task_queues:95:5)", delay: 35 },
+  { type: "panic", msg: "[FATAL] KERNEL INTEGRITY BREACHED: SIGNAL 11 (SIGSEGV)", delay: 70 },
+  { type: "panic", msg: "[PANIC] VIRTUAL_MEMORY_PANIC: PAGE_FAULT_IN_NONPAGED_AREA", delay: 60 },
+  { type: "hex",   msg: "0xDEAD00:  FF FF FF FF  00 00 00 00  DE AD BE EF  7F FF FF FF  |????????........|", delay: 45 },
+  { type: "hex",   msg: "0xDEAD10:  50 45 50 53  49 20 4E 4F  54 20 46 4F  55 4E 44 21  |PEPSI NOT FOUND!|", delay: 45 },
+  { type: "hex",   msg: "0xDEAD20:  21 21 21 21  21 21 21 21  21 21 21 21  21 21 21 21  |!!!!!!!!!!!!!!!!|", delay: 45 },
+  { type: "error", msg: "█ EMERGENCY COREDUMP: REGISTER TRACE █", delay: 60 },
+  { type: "trace", msg: "RAX: 0x0000000000000000  RBX: 0xDEADBEEFCAFE0001", delay: 30 },
+  { type: "trace", msg: "RCX: 0xFFFFFFFFFFFFFFFF  RDX: 0x00007FFFFFFFFFFF", delay: 30 },
+  { type: "trace", msg: "RSI: 0x0000000000000042  RDI: 0x00000000PEPSI000", delay: 30 },
+  { type: "trace", msg: "RIP: 0x0000000000401337  RFL: 0x0000000000010286", delay: 30 },
+  { type: "panic", msg: "[CRIT] WATCHDOG TIMEOUT: BUS CONTROLLER LOCKUP DETECTED", delay: 50 },
+  { type: "panic", msg: "[OVERVOLT] CORE OVERVOLTAGE TRIP: 2.18V (LIMIT: 1.25V)", delay: 50 },
+  { type: "panic", msg: "[OVERHEAT] THERMAL RUNAWAY: SENSOR T_JUNCTION @ 108.4°C [CRITICAL]", delay: 50 },
+  { type: "panic", msg: "[HARDWARE] EXCEPTION: CORRUPTING SECTOR MAP...", delay: 50 },
+  { type: "error", msg: "█ SYSTEM IN COMA: ESCALATING PRIVILEGE ESCAPE DETECTED █", delay: 90 },
+  { type: "error", msg: "KERNEL PANIC: ATTEMPTED TO KILL INIT! exitcode=0x0000000b", delay: 80 },
+  { type: "error", msg: "HALTING ALL THREADS... [HARD RESET TRIGGERED]", delay: 90 },
+  { type: "reset", msg: "█ SYSTEM HALTED: CLEARING DISPLAY BUFFER AND REBOOTING... █", delay: 2200 },
 ];
 
 export function buildFullPepsiMeltdown(username) {
@@ -387,3 +389,4 @@ export const REGULAR_EVENTS = [
     ]
   }
 ];
+
