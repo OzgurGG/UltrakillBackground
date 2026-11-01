@@ -71,6 +71,153 @@ const fragmentShader = `
   }
 `;
 
+// Gerçek, temiz JavaScript kod blokları (Labirent, CultStream, CRT Shader, V1 Kernel)
+const CODE_SNIPPETS = [
+  [
+    "// --- [ENGINE] RECURSIVE BACKTRACKER MAZE ---",
+    "const generateMaze = (grid, width, height) => {",
+    "  const stack = [[0, 0]];",
+    "  grid[0][0].visited = true;",
+    "",
+    "  while (stack.length > 0) {",
+    "    const [cx, cy] = stack[stack.length - 1];",
+    "    const neighbors = getUnvisited(grid, cx, cy);",
+    "",
+    "    if (neighbors.length > 0) {",
+    "      const [nx, ny, dir] = pickRandom(neighbors);",
+    "      removeWall(grid[cy][cx], dir);",
+    "      grid[ny][nx].visited = true;",
+    "      stack.push([nx, ny]);",
+    "    } else {",
+    "      stack.pop();",
+    "    }",
+    "  }",
+    "  return grid;",
+    "};"
+  ],
+  [
+    "// --- [STREAM] CULT_STREAM GLYPH PROCESSOR ---",
+    "async function pipeStreamBuffer(streamReader) {",
+    "  const buffer = new Uint8Array(2048);",
+    "  let offset = 0;",
+    "",
+    "  try {",
+    "    while (true) {",
+    "      const { done, value } = await streamReader.read();",
+    "      if (done) break;",
+    "",
+    "      for (let i = 0; i < value.length; i++) {",
+    "        const charCode = value[i];",
+    "        if (charCode >= 32 && charCode <= 126) {",
+    "          renderMatrixColumn(String.fromCharCode(charCode), offset);",
+    "        }",
+    "        offset = (offset + 1) % 64;",
+    "      }",
+    "    }",
+    "  } catch (err) {",
+    "    console.warn('StreamPipeline::Interrupted', err);",
+    "  }",
+    "}"
+  ],
+  [
+    "// --- [SHADER] CRT POST-PROCESSING COMPOSITE ---",
+    "const initCRTProgram = (gl, vertCode, fragCode) => {",
+    "  const program = gl.createProgram();",
+    "  const vs = compileShader(gl, gl.VERTEX_SHADER, vertCode);",
+    "  const fs = compileShader(gl, gl.FRAGMENT_SHADER, fragCode);",
+    "",
+    "  gl.attachShader(program, vs);",
+    "  gl.attachShader(program, fs);",
+    "  gl.linkProgram(program);",
+    "",
+    "  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {",
+    "    const info = gl.getProgramInfoLog(program);",
+    "    throw new Error(`ShaderLinkFailure: ${info}`);",
+    "  }",
+    "  return program;",
+    "};"
+  ],
+  [
+    "// --- [KERNEL] V1 SUBSYSTEM EVENT DISPATCHER ---",
+    "class V1SubsystemKernel extends EventTarget {",
+    "  constructor(config = {}) {",
+    "    super();",
+    "    this.state = 'ONLINE';",
+    "    this.fuelIntake = 1.0;",
+    "  }",
+    "",
+    "  dispatchAction(actionType, payload) {",
+    "    if (this.state !== 'ONLINE') return;",
+    "    const event = new CustomEvent(actionType, {",
+    "      detail: {",
+    "        timestamp: performance.now(),",
+    "        data: payload",
+    "      }",
+    "    });",
+    "    this.dispatchEvent(event);",
+    "  }",
+    "}"
+  ]
+];
+
+const JS_KEYWORDS = new Set([
+  'const', 'let', 'var', 'function', 'return', 'if', 'else', 'while', 'for',
+  'async', 'await', 'class', 'constructor', 'new', 'try', 'catch', 'throw',
+  'break', 'super', 'true', 'false', 'null', 'undefined', 'extends'
+]);
+
+function renderCodeLine(ctx, text, x, y, isTyping, now) {
+  if (text.trim().startsWith('//')) {
+    ctx.fillStyle = 'rgba(0, 240, 255, 0.45)';
+    ctx.font = '11px "Share Tech Mono", monospace';
+    ctx.fillText(text, x, y);
+    if (isTyping) {
+      const curX = x + ctx.measureText(text).width;
+      ctx.fillStyle = '#00f0ff';
+      ctx.fillRect(curX + 2, y - 9, 6, 12);
+    }
+    return;
+  }
+
+  const tokens = text.split(/([a-zA-Z0-9_$]+|'[^']*'|"[^"]*"|`[^`]*`|\s+|[^\s\w])/g);
+  let curX = x;
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (!token) continue;
+
+    if (JS_KEYWORDS.has(token)) {
+      ctx.fillStyle = '#00f0ff';
+      ctx.font = 'bold 11px "Share Tech Mono", monospace';
+    } else if (token.startsWith("'") || token.startsWith('"') || token.startsWith('`')) {
+      ctx.fillStyle = '#ffbb33';
+      ctx.font = '11px "Share Tech Mono", monospace';
+    } else if (/^\d+$/.test(token)) {
+      ctx.fillStyle = '#39ff14';
+      ctx.font = '11px "Share Tech Mono", monospace';
+    } else if (/[{}()[\]]/.test(token)) {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px "Share Tech Mono", monospace';
+    } else if (/[=><!+\-*/&|:;.,]/.test(token)) {
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.75)';
+      ctx.font = '11px "Share Tech Mono", monospace';
+    } else {
+      ctx.fillStyle = 'rgba(215, 240, 255, 0.78)';
+      ctx.font = '11px "Share Tech Mono", monospace';
+    }
+
+    ctx.fillText(token, curX, y);
+    curX += ctx.measureText(token).width;
+  }
+
+  if (isTyping) {
+    if (Math.floor(now * 0.005) % 2 === 0) {
+      ctx.fillStyle = '#00f0ff';
+      ctx.fillRect(curX + 2, y - 9, 6, 12);
+    }
+  }
+}
+
 export default function CRTTerminal() {
   const mountRef = useRef(null);
   const [now, setNow] = useState(Date.now());
@@ -196,11 +343,55 @@ export default function CRTTerminal() {
     // 5. Ana Çizim & Bükme Döngüsü (60 FPS)
     let rafId;
 
+    // JavaScript Typewriter Motor Durumu
+    const typeState = {
+      snippetIdx: 0,
+      lineIdx: 0,
+      charIdx: 0,
+      completedLines: [],
+      pauseUntil: 0
+    };
+
     function renderLoop() {
       const now = performance.now();
       const p = profilRef.current;
       if (avatarImg.src !== p.avatarUrl) {
         avatarImg.src = p.avatarUrl;
+      }
+
+      // Typewriter Hızlı Kod Akış Güncellemesi
+      const currentSnippet = CODE_SNIPPETS[typeState.snippetIdx];
+      const currentLine = currentSnippet[typeState.lineIdx] || '';
+
+      if (now >= typeState.pauseUntil) {
+        // Satır başındaki tab/boşluk girintilerini anında tüket ve koda başla
+        if (typeState.charIdx === 0) {
+          const firstNonSpace = currentLine.search(/\S|$/);
+          typeState.charIdx = firstNonSpace;
+        }
+
+        // Hızlı yazma: her karede 3 karakter ilerle (satır 0.15-0.25 saniyede tamamlanır)
+        typeState.charIdx = Math.min(currentLine.length, typeState.charIdx + 3);
+
+        if (typeState.charIdx >= currentLine.length) {
+          // Satır tamamlandı
+          typeState.completedLines.push(currentLine);
+          typeState.lineIdx++;
+          typeState.charIdx = 0;
+
+          if (typeState.lineIdx >= currentSnippet.length) {
+            // Fonksiyon tamamlandı: 1.5 saniye durakla
+            typeState.pauseUntil = now + 1500;
+            typeState.lineIdx = 0;
+            typeState.snippetIdx = (typeState.snippetIdx + 1) % CODE_SNIPPETS.length;
+            if (typeState.completedLines.length > 60) {
+              typeState.completedLines = typeState.completedLines.slice(-30);
+            }
+          } else {
+            // Satırlar arası ufak nefes alma süresi (~50ms)
+            typeState.pauseUntil = now + 50;
+          }
+        }
       }
 
       // --- 2D KOMPOZİT ÇİZİMİ ---
@@ -350,7 +541,32 @@ export default function CRTTerminal() {
           sceneCtx.fillRect(x, boxY, 1.2, boxH);
         }
 
-        // 3. ANATOMİ ÇİZİMİ (Önceki boyut ve konumunu 1 piksel bile değiştirmeden koruyoruz)
+        // 3. JAVASCRIPT TYPEWRITER KOD TERMİNALİ (Hızlı akan, tab girintili gerçek JS)
+        const termPadX = 16;
+        const termPadY = 18;
+        const termX = boxX + termPadX;
+        const termY = boxY + termPadY;
+        const termH = boxH - termPadY * 2;
+        const lineH = 14;
+        const maxVisible = Math.floor(termH / lineH);
+
+        const linesToRender = [...typeState.completedLines];
+        if (typeState.lineIdx < currentSnippet.length) {
+          linesToRender.push(currentLine.slice(0, typeState.charIdx));
+        }
+
+        const startIdx = Math.max(0, linesToRender.length - maxVisible);
+        const visibleLines = linesToRender.slice(startIdx);
+
+        sceneCtx.save();
+        visibleLines.forEach((text, li) => {
+          const lY = termY + li * lineH + 10;
+          const isCurrent = (li === visibleLines.length - 1);
+          renderCodeLine(sceneCtx, text, termX, lY, isCurrent, now);
+        });
+        sceneCtx.restore();
+
+        // 4. ANATOMİ ÇİZİMİ (Holografik neon çizim kodların üzerinde ışıldar)
         const vSize = Math.round(boxH * 1.076);
         const vY = Math.round(boxY - vSize * (32 / 1080));
         const vX = Math.round(boxX + boxW - vSize * (1036 / 1080));
