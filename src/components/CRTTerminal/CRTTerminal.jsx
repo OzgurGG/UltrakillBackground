@@ -1275,47 +1275,53 @@ export default function CRTTerminal() {
         sceneCtx.rect(boxX, boxY, boxW, boxH);
         sceneCtx.clip();
 
-        // 1. BUZLU CAM / BLUR EFEKTİ (Arka plandaki mazeCanvas kutu içinde buzlu cam gibi bulanıklaşır)
-        // Kullanıcı isteği: "arka plandaki siyah katmanı kaldır en arkaplan gözüksün. yada cam gibi böyle blurlşu bişey yap o daha iyi."
+        // 1. BUZLU CAM & DERİN BLUR (Arka plandaki mazeCanvas kutu içinde gerçek füme cam gibi derinlemesine bulanıklaşır)
+        // Kullanıcı isteği: "görseldeki gibi blurlayabilirmisin? hem arkada akan kodları, hemde onun arkasındaki şeffafr siyah katmanı."
+        const blurBleed = 20;
         sceneCtx.save();
-        sceneCtx.filter = 'blur(6px) brightness(0.65)';
+        sceneCtx.filter = 'blur(16px) brightness(0.6)';
         sceneCtx.drawImage(
           mazeCanvas,
-          boxX, boxY - HEADER_HEIGHT, boxW, boxH,
-          boxX, boxY, boxW, boxH
+          Math.max(0, boxX - blurBleed),
+          Math.max(0, boxY - HEADER_HEIGHT - blurBleed),
+          boxW + blurBleed * 2,
+          boxH + blurBleed * 2,
+          boxX - blurBleed,
+          boxY - blurBleed,
+          boxW + blurBleed * 2,
+          boxH + blurBleed * 2
         );
         sceneCtx.restore();
 
-        // 2. YARI SAYDAM FÜME CAM TINT & VIGNETTE (Arka planı tamamen karartmaz, cam derinliği verir)
-        sceneCtx.fillStyle = 'rgba(4, 8, 16, 0.52)';
+        // 2. YARI SAYDAM FÜME CAM TINT & VIGNETTE (Işık kırılımlı füme cam derinliği)
+        sceneCtx.fillStyle = 'rgba(2, 6, 12, 0.58)';
         sceneCtx.fillRect(boxX, boxY, boxW, boxH);
 
         const vigGrad = sceneCtx.createRadialGradient(
-          boxX + boxW / 2, boxY + boxH / 2, boxH * 0.25,
-          boxX + boxW / 2, boxY + boxH / 2, boxH * 0.75
+          boxX + boxW / 2, boxY + boxH / 2, boxH * 0.2,
+          boxX + boxW / 2, boxY + boxH / 2, boxH * 0.72
         );
-        vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-        vigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.65)');
+        vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0.05)');
+        vigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.72)');
         sceneCtx.fillStyle = vigGrad;
         sceneCtx.fillRect(boxX, boxY, boxW, boxH);
 
-        // Üst kenar cam parlaması
+        // Üst kenar optik cam parlaması
         const specGrad = sceneCtx.createLinearGradient(boxX, boxY, boxX, boxY + 28);
-        specGrad.addColorStop(0, 'rgba(0, 240, 255, 0.12)');
+        specGrad.addColorStop(0, 'rgba(0, 240, 255, 0.14)');
         specGrad.addColorStop(1, 'rgba(0, 240, 255, 0)');
         sceneCtx.fillStyle = specGrad;
         sceneCtx.fillRect(boxX, boxY, boxW, 28);
 
-        // İnce Trinitron fosfor ağı / scanlines
-        sceneCtx.fillStyle = 'rgba(0, 0, 0, 0.22)';
-        for (let y = boxY; y < boxY + boxH; y += 3) {
-          sceneCtx.fillRect(boxX, y, boxW, 1.2);
-        }
-        for (let x = boxX; x < boxX + boxW; x += 3) {
-          sceneCtx.fillRect(x, boxY, 1.2, boxH);
-        }
+        // Alt kenar cam yansıması
+        const rimGrad = sceneCtx.createLinearGradient(boxX, boxY + boxH - 24, boxX, boxY + boxH);
+        rimGrad.addColorStop(0, 'rgba(0, 240, 255, 0)');
+        rimGrad.addColorStop(1, 'rgba(0, 240, 255, 0.08)');
+        sceneCtx.fillStyle = rimGrad;
+        sceneCtx.fillRect(boxX, boxY + boxH - 24, boxW, 24);
 
-        // 3. JAVASCRIPT TYPEWRITER & BURST KOD TERMİNALİ (Hızlı akan, tab girintili, onlarca teknik içeren)
+        // 3. JAVASCRIPT TYPEWRITER & BURST KOD TERMİNALİ (ARKA PLANDA DERİNLİK BLUR'U / OPTICAL DoF)
+        // Kullanıcı isteği: Görseldeki gibi arkada akan kodlar out-of-focus (bokeh / lens blur) olarak akar
         const termPadX = 16;
         const termPadY = 18;
         const termX = boxX + termPadX;
@@ -1344,13 +1350,26 @@ export default function CRTTerminal() {
         const startIdx = Math.max(0, linesToRender.length - maxVisible);
         const visibleLines = linesToRender.slice(startIdx);
 
+        // Optik Odak Dışı (Depth of Field) Gaussian Lens Bluru ile kod akışı
         sceneCtx.save();
+        sceneCtx.filter = 'blur(2.6px) brightness(1.28)';
         visibleLines.forEach((text, li) => {
           const lY = termY + li * lineH + 10;
           const isCurrent = (li === visibleLines.length - 1 && (currentEvt.mode === 'type' || currentEvt.mode === 'scramble' || currentEvt.mode === 'tirade'));
           renderCodeLine(sceneCtx, text, termX, lY, isCurrent, now, termW);
         });
         sceneCtx.restore();
+
+        // 3.4 CRT TRINITRON FOSFOR AĞI & SCANLINES (BLURLU KODLARIN ÜZERİNDEN GEÇEN RASTER IZGARASI)
+        // Görseldeki gibi tarama çizgileri blurlu fosfor parıltısının üzerinden keserek geçer
+        sceneCtx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+        for (let y = boxY; y < boxY + boxH; y += 3) {
+          sceneCtx.fillRect(boxX, y, boxW, 1.2);
+        }
+        sceneCtx.fillStyle = 'rgba(0, 0, 0, 0.16)';
+        for (let x = boxX; x < boxX + boxW; x += 3) {
+          sceneCtx.fillRect(x, boxY, 1.2, boxH);
+        }
 
         // 3.5 CANLI KÖŞE TELEMETRİ HUD ÇİPİ (TICK SAYACI, SİSTEM FREKANSI, SİNYAL LEDİ)
         const chipW = 144;
