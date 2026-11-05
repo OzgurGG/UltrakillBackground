@@ -47,19 +47,19 @@ const STOP_TEXTS = [
 ];
 
 const CONFIG = {
-  drops: { max: 28, spawnInterval: [0.35, 0.85], speed: [4, 8] },
+  drops: { max: 20, spawnInterval: [0.25, 0.65], speed: [8.5, 14.5] },
   fork: { chance: 0.04 },
-  card: { stopChance: 0.004, pathCardChance: 0.45 },
-  fade: { lifeBase: 5.5, intensityDecay: 0.085, decayStages: 5 },
+  card: { stopChance: 0.003, pathCardChance: 0.35 },
+  fade: { lifeBase: 2.8, intensityDecay: 0.30, decayStages: 5 },
   node: {
     buffer: 2,
-    spawnChance: 0.17,
-    maxNodes: 7,
-    nodeLife: 20.0,
-    nodeSpawnDrops: 3,
-    nodeSpawnInterval: [1.8, 3.8],
+    spawnChance: 0.16,
+    maxNodes: 5,
+    nodeLife: 12.0,
+    nodeSpawnDrops: 2,
+    nodeSpawnInterval: [1.8, 3.2],
   },
-  scatter: { resetEvery: 12, resetChance: 0.52 },
+  scatter: { resetEvery: 10, resetChance: 0.55 },
 };
 
 const DROP_STATES = { ALIVE: 'alive', DYING: 'dying', DEAD: 'dead' };
@@ -96,6 +96,21 @@ const headGlowSprite = (typeof document !== 'undefined') ? (() => {
   return c;
 })() : null;
 
+const CARD_DASH = [2, 4];
+const NO_DASH = [];
+
+const nodeHitGlowSprite = (typeof document !== 'undefined') ? (() => {
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 128;
+  const gCtx = c.getContext('2d');
+  const g = gCtx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, 'rgba(155, 150, 175, 0.25)');
+  g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  gCtx.fillStyle = g;
+  gCtx.fillRect(0, 0, 128, 128);
+  return c;
+})() : null;
+
 export function initPathDrops(cvs, autoLoop = false) {
   if (!cvs) return () => {};
   const ctx = cvs.getContext('2d');
@@ -103,7 +118,11 @@ export function initPathDrops(cvs, autoLoop = false) {
   let grid = [], drops = [];
   const dirtySet = new Set();
   const toRemoveKeys = [];
-  const activeCards = [];
+  const MAX_CARDS = 64;
+  const cardR = new Int32Array(MAX_CARDS);
+  const cardC = new Int32Array(MAX_CARDS);
+  const cardCell = new Array(MAX_CARDS);
+  let cardCount = 0;
   let nodes = [], nodeIdSeq = 0;
   let spawnTimer = 0.3;
 
@@ -128,7 +147,7 @@ export function initPathDrops(cvs, autoLoop = false) {
     cell.cardLabel = null; cell.cardWCells = 0;
     cell.cardOriginR = -1; cell.cardOriginC = -1;
     cell.age = 0; cell.decayStage = 0; cell.isHorizontal = true;
-    markDirty(r, c);
+    if (r >= 0 && r < rows && c >= 0 && c < cols) dirtySet.delete(r * cols + c);
   }
   function clearCardRegion(oR, oC, cW, cH) {
     for (let i = -1; i <= cH; i++)
@@ -207,7 +226,7 @@ export function initPathDrops(cvs, autoLoop = false) {
       state: DROP_STATES.ALIVE,
       dyingTimer: 0,
       steps: 0,
-      visitedDirs: new Set(),
+      visitedDirs: 0,
       targetR, targetC,
       fromNodeId,
       retargetTimer: 0,
@@ -296,7 +315,7 @@ export function initPathDrops(cvs, autoLoop = false) {
       let wt = 1.0;
       if (v.d.name === drop.dir.name) wt *= 1.8;
       if (v.d.dr === -drop.dir.dr && v.d.dc === -drop.dir.dc) wt *= 0.04;
-      if (drop.visitedDirs.has(v.d.name)) wt *= 0.35;
+      if ((drop.visitedDirs & v.d.bit) !== 0) wt *= 0.35;
       if (drop.targetR >= 0) {
         const cd = Math.abs(drop.r - drop.targetR) + Math.abs(drop.c - drop.targetC);
         const nd = Math.abs(v.nr - drop.targetR) + Math.abs(v.nc - drop.targetC);
@@ -404,14 +423,12 @@ export function initPathDrops(cvs, autoLoop = false) {
     ctx.fillStyle = `rgba(145,140,162,${0.55 * alpha})`;
     ctx.fillRect(cxPx + 5, cyPx + chPx - 5, barW, 2);
 
-    if (n.hitInt > 0) {
+    if (n.hitInt > 0.01 && nodeHitGlowSprite) {
+      ctx.save();
       ctx.globalCompositeOperation = 'screen';
-      const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, cwPx * 0.6);
-      grd.addColorStop(0, `rgba(155,150,175,${n.hitInt * 0.1})`);
-      grd.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = grd;
-      ctx.fillRect(cx - cwPx, cy - chPx, cwPx * 2, chPx * 2);
-      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = Math.min(1.0, n.hitInt * 0.45);
+      ctx.drawImage(nodeHitGlowSprite, cx - cwPx, cy - chPx, cwPx * 2, chPx * 2);
+      ctx.restore();
     }
   }
 
@@ -483,7 +500,7 @@ export function initPathDrops(cvs, autoLoop = false) {
 
       if (validDirs.length > 0) {
         const nextMove = selectNextMove(drop, validDirs, dt);
-        drop.visitedDirs.add(nextMove.d.name);
+        drop.visitedDirs |= nextMove.d.bit;
         drop.steps++;
 
         // Fork
@@ -497,7 +514,7 @@ export function initPathDrops(cvs, autoLoop = false) {
               r: drop.r, c: drop.c, dir: fm.d,
               speed: CONFIG.drops.speed[0] + Math.random() * (CONFIG.drops.speed[1] - CONFIG.drops.speed[0]),
               moveTimer: 0, state: DROP_STATES.ALIVE, dyingTimer: 0,
-              steps: 0, visitedDirs: new Set(),
+              steps: 0, visitedDirs: 0,
               targetR: tgt.r, targetC: tgt.c,
               fromNodeId: drop.fromNodeId,
               retargetTimer: 3.0 + Math.random() * 3.0,
@@ -591,6 +608,16 @@ export function initPathDrops(cvs, autoLoop = false) {
     for (let k = 0; k < toRemoveKeys.length; k++) {
       dirtySet.delete(toRemoveKeys[k]);
     }
+
+    // Guvenlik siniri: Asiri dirtySet birikmesini onle (memory & CPU tavan korumasi)
+    if (dirtySet.size > 2000) {
+      for (const key of dirtySet) {
+        const r = Math.floor(key / cols), c = key % cols;
+        if (r >= rows || c >= cols || !grid[r] || !grid[r][c] || grid[r][c].intensity <= 0.08) {
+          dirtySet.delete(key);
+        }
+      }
+    }
   }
 
   function draw() {
@@ -598,7 +625,7 @@ export function initPathDrops(cvs, autoLoop = false) {
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 
     setFont('bold 15px "Share Tech Mono",monospace');
-    activeCards.length = 0;
+    cardCount = 0;
 
     for (const key of dirtySet) {
       const r = Math.floor(key / cols), c = key % cols;
@@ -606,8 +633,11 @@ export function initPathDrops(cvs, autoLoop = false) {
       const cell = grid[r][c];
       if (cell.intensity <= 0) continue;
 
-      if (cell.cardLabel) {
-        activeCards.push({ r, c, cell });
+      if (cell.cardLabel && cardCount < MAX_CARDS) {
+        cardR[cardCount] = r;
+        cardC[cardCount] = c;
+        cardCell[cardCount] = cell;
+        cardCount++;
       }
 
       const px = c * CELL_W + CELL_W / 2, py = r * CELL_H + CELL_H / 2;
@@ -643,11 +673,13 @@ export function initPathDrops(cvs, autoLoop = false) {
       }
     }
 
-    // 3. Render Cards gathered from active set
-    if (activeCards.length > 0) {
+    // 3. Render Cards gathered from active set (Zero GC)
+    if (cardCount > 0) {
       setFont('bold 11px "Share Tech Mono",monospace');
-      for (let i = 0; i < activeCards.length; i++) {
-        const { r, c, cell } = activeCards[i];
+      for (let i = 0; i < cardCount; i++) {
+        const r = cardR[i];
+        const c = cardC[i];
+        const cell = cardCell[i];
         const boxW = cell.cardWCells || 4;
         const px = c * CELL_W + (CELL_W * boxW) / 2;
         const py = r * CELL_H + (CELL_H * 2) / 2;
@@ -661,12 +693,12 @@ export function initPathDrops(cvs, autoLoop = false) {
         ctx.lineWidth = 1;
         ctx.strokeRect(sx, sy, cw, ch);
         ctx.strokeStyle = cardBorder(cell.intensity * 0.25);
-        ctx.setLineDash([2, 4]);
+        ctx.setLineDash(CARD_DASH);
         ctx.beginPath();
         ctx.moveTo(px, sy + ch);
         ctx.lineTo(px, sy + ch + CELL_H * 0.38);
         ctx.stroke();
-        ctx.setLineDash([]);
+        ctx.setLineDash(NO_DASH);
         ctx.fillStyle = cardText(cell.intensity);
         ctx.fillText(cell.cardLabel, px, py + 1);
       }

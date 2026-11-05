@@ -1,0 +1,261 @@
+:root {
+  --bg: #09090d;
+  --panel-bg: #101017;
+  --border: rgba(255, 255, 255, 0.14);
+  --border-focus: var(--accent, #00f0ff);
+  --text: #eaeaff;
+  --text-muted: #828296;
+  --input-bg: #050508;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'VCR OSD Mono', 'VCR OST Mono', monospace;
+  user-select: none;
+  -webkit-font-smoothing: none;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.settings-root {
+  width: 100%;
+  min-height: 100vh;
+  padding: 16px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-header {
+  border-bottom: 2px solid var(--accent, #00f0ff);
+  padding-bottom: 8px;
+}
+
+.settings-header h1 {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: 1.5px;
+  color: var(--accent, #00f0ff);
+}
+
+.settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.settings-section {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.section-title {
+  font-size: 11px;
+  color: var(--accent, #00f0ff);
+  letter-spacing: 1px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 28px;
+}
+
+.row-label {
+  font-size: 12px;
+  color: var(--text);
+  letter-spacing: 0.5px;
+}
+
+/* Color Controls */
+.color-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-picker-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--accent, #00f0ff);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.color-picker-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-picker-input::-webkit-color-swatch {
+  border: none;
+}
+
+.hex-input {
+  width: 80px;
+  height: 28px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 12px;
+  padding: 0 6px;
+  text-transform: uppercase;
+}
+
+.hex-input:focus {
+  border-color: var(--accent, #00f0ff);
+  outline: none;
+}
+
+/* Text Input */
+.text-input {
+  width: 140px;
+  height: 28px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 12px;
+  padding: 0 8px;
+}
+
+.text-input:focus {
+  border-color: var(--accent, #00f0ff);
+  outline: none;
+}
+
+/* Sliders */
+.slider-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.slider-control input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 130px;
+  height: 6px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  outline: none;
+}
+
+.slider-control input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--accent, #00f0ff);
+  cursor: pointer;
+  border: none;
+}
+
+.slider-value {
+  font-size: 11px;
+  color: var(--text-muted);
+  width: 44px;
+  text-align: right;
+}
+
+/* Toggle Buttons */
+.toggle-btn {
+  height: 26px;
+  padding: 0 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+}
+
+.toggle-btn.active {
+  border-color: var(--accent, #00f0ff);
+  color: var(--accent, #00f0ff);
+  background: rgba(0, 240, 255, 0.08);
+}
+
+/* Segmented Buttons */
+.segmented-control {
+  display: flex;
+  border: 1px solid var(--border);
+}
+
+.segmented-control button {
+  flex: 1;
+  height: 26px;
+  padding: 0 8px;
+  background: var(--input-bg);
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.segmented-control button:last-child {
+  border-right: none;
+}
+
+.segmented-control button.active {
+  background: var(--accent, #00f0ff);
+  color: #000000;
+  font-weight: bold;
+}
+
+/* Footer Action Buttons */
+.settings-footer {
+  display: flex;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.btn-secondary,
+.btn-primary {
+  flex: 1;
+  height: 32px;
+  font-size: 12px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+}
+
+.btn-secondary {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.btn-secondary:hover {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-primary {
+  background: transparent;
+  border: 1px solid var(--accent, #00f0ff);
+  color: var(--accent, #00f0ff);
+}
+
+.btn-primary:hover {
+  background: var(--accent, #00f0ff);
+  color: #000000;
+}

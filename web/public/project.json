@@ -1,0 +1,11 @@
+{
+  "title": "SWITCH CRT Terminal",
+  "description": "Cyberpunk Gothic CRT Terminal & Autorouter Simulation",
+  "file": "index.html",
+  "type": "web",
+  "version": 1,
+  "general": {
+    "properties": {}
+  }
+}
+

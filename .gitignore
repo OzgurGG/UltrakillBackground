@@ -1,4 +1,23 @@
-node_modules
-dist
-.vite
+# Bağımlılıklar
+node_modules/
+**/node_modules/
+package-lock.json
 
+# Web Derleme Çıktıları
+web/dist/
+.vite/
+
+# C# Derleme ve Geçici Dosyalar
+csharp/*.old
+csharp/*.log
+*.log
+app.log
+
+# Arşiv ve Yerel Paketler (Releases GitHub Actions tarafından üretilir)
+*.zip
+UltrakillBackground/
+ultrakillbackgroundapp/
+archive/
+release-builds/
+release-csharp/
+packages/

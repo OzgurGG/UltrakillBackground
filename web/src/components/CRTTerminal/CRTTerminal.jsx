@@ -1,15 +1,43 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { initPathDrops } from '../SnakeGame_PathDrops/PathDrops';
-import { initCultStream } from '../Header/backgrounds/CultStream/CultStream';
 import { crtConfig } from '../../config/crtConfig';
+import { THEMES, getEffectiveTheme, loadStoredConfig, saveStoredConfig, configChannel } from '../../config/switchConfig';
 import { vertexShader, fragmentShader } from './crtShaders';
-import { buildFullPepsiMeltdown, REGULAR_EVENTS, PEPSI_DIALOGUE_SRC } from './terminalData';
+import { buildFullPepsiMeltdown, generateNextUltrakillEvent, PEPSI_DIALOGUE_SRC } from './terminalData';
 import { renderCodeLine, drawNeonBrackets, SCRAMBLE_CHARS } from './terminalRenderer';
 import './CRTTerminal.css';
 
 export default function CRTTerminal() {
   const mountRef = useRef(null);
+  const [config, setConfig] = useState(() => loadStoredConfig());
+  const configRef = useRef(config);
+  configRef.current = config;
+
+  // C# Programindan veya Ayarlar Penceresinden Gelen Canli Guncellemeleri Dinle
+  useEffect(() => {
+    const handleConfigUpdate = (incoming) => {
+      if (!incoming) return;
+      setConfig((prev) => ({ ...prev, ...incoming }));
+    };
+
+    if (configChannel) {
+      configChannel.onmessage = (e) => {
+        handleConfigUpdate(e.data);
+      };
+    }
+
+    window.setSwitchConfig = (incoming) => {
+      handleConfigUpdate(incoming);
+    };
+
+    return () => {
+      delete window.setSwitchConfig;
+      if (configChannel) {
+        configChannel.onmessage = null;
+      }
+    };
+  }, []);
 
   // WebGL ve Kompozit Sahne Motoru
   useEffect(() => {
@@ -19,6 +47,9 @@ export default function CRTTerminal() {
     let width = window.innerWidth;
     let height = window.innerHeight;
     const DPR = 1;
+
+    const initialTheme = getEffectiveTheme(configRef.current);
+    let lastThemeKey = initialTheme.id + '_' + initialTheme.primary;
 
     // 1. Sahne Tuvali
     const sceneCanvas = document.createElement('canvas');
@@ -35,34 +66,9 @@ export default function CRTTerminal() {
     mazeCanvas.style.height = height + 'px';
     const mazeCtrl = initPathDrops(mazeCanvas, false);
 
-    // 3. Alt Modul Tuvali: SWITCH Kutusu Arka Plan Matrix Akisi (CultStream) - Tek RAF Entegrasyonu
-    const matrixCanvas = document.createElement('canvas');
-    let matrixCtrl = null;
-    function setupMatrix(mw, mh) {
-      if (matrixCtrl && matrixCtrl.destroy) matrixCtrl.destroy();
-      matrixCanvas.width = Math.max(10, mw) * DPR;
-      matrixCanvas.height = Math.max(10, mh) * DPR;
-      matrixCanvas.style.width = Math.max(10, mw) + 'px';
-      matrixCanvas.style.height = Math.max(10, mh) + 'px';
-      matrixCtrl = initCultStream(matrixCanvas, 'back', false);
-    }
-
     // Vitruvian V1 Optik Efektli Cizim
     const vitruvianLedImg = new Image();
-    vitruvianLedImg.src = '/vitruvian-v1-led-cyan.png';
-
-    const zineTextureImg = new Image();
-    zineTextureImg.src = '/switch-zine-texture.png';
-    let cachedZinePattern = null;
-
-    function bakeZinePattern() {
-      if (!zineTextureImg.complete || zineTextureImg.naturalWidth === 0) return;
-      try {
-        cachedZinePattern = sceneCtx.createPattern(zineTextureImg, 'repeat');
-      } catch (e) {}
-    }
-    zineTextureImg.onload = bakeZinePattern;
-    if (zineTextureImg.complete && zineTextureImg.naturalWidth > 0) bakeZinePattern();
+    vitruvianLedImg.src = initialTheme.vitruvianImg;
 
     if (document.fonts) {
       document.fonts.load('64px "VCR OSD Mono"');
@@ -86,52 +92,71 @@ export default function CRTTerminal() {
     spCtx.fillRect(2, 0, 1, 3);
     let scanPattern = null;
 
-    // 1. Vitruvian Canvas (Cyan Bloom + Crisp White Core - 0ms per-frame CPU Blur)
+    // 1. Vitruvian Canvas (Dinamik Neon Bloom + Crisp White Core)
     let cachedVitruvianCanvas = null;
 
-    function bakeVitruvian() {
+    function bakeVitruvian(thm) {
       if (!vitruvianLedImg.complete || vitruvianLedImg.naturalWidth === 0) return;
+      const curThm = thm || THEMES[configRef.current?.theme] || THEMES.cyan;
       const size = 1080;
       const pad = 44;
       const c = document.createElement('canvas');
       c.width = size + pad * 2;
       c.height = size + pad * 2;
       const cCtx = c.getContext('2d');
-      cCtx.shadowColor = 'rgba(0, 240, 255, 0.88)';
-      cCtx.shadowBlur = 18;
+
+      // 1. Dis Neon Parilti Aurasi (Glow Aura)
+      cCtx.shadowColor = curThm.glowPrimary || 'rgba(0, 240, 255, 0.88)';
+      cCtx.shadowBlur = 22;
       cCtx.drawImage(vitruvianLedImg, pad, pad, size, size);
-      cCtx.shadowColor = 'rgba(255, 255, 255, 0.95)';
-      cCtx.shadowBlur = 6;
+
+      // 2. Ic Neon Katmani
+      cCtx.shadowColor = curThm.primary || 'rgba(0, 240, 255, 0.95)';
+      cCtx.shadowBlur = 8;
       cCtx.drawImage(vitruvianLedImg, pad, pad, size, size);
+
+      // 3. Hatlari temanin rengine boya (tint)
+      cCtx.save();
+      cCtx.globalCompositeOperation = 'source-in';
+      cCtx.fillStyle = curThm.primary;
+      cCtx.fillRect(0, 0, c.width, c.height);
+      cCtx.restore();
+
+      // 4. Net beyaz LED cekirdegi
+      cCtx.save();
+      cCtx.globalAlpha = 0.72;
+      cCtx.drawImage(vitruvianLedImg, pad, pad, size, size);
+      cCtx.restore();
+
       cachedVitruvianCanvas = c;
     }
-    vitruvianLedImg.onload = bakeVitruvian;
-    if (vitruvianLedImg.complete && vitruvianLedImg.naturalWidth > 0) bakeVitruvian();
+    vitruvianLedImg.onload = () => {
+      const curThm = THEMES[configRef.current?.theme] || THEMES.cyan;
+      bakeVitruvian(curThm);
+    };
+    if (vitruvianLedImg.complete && vitruvianLedImg.naturalWidth > 0) bakeVitruvian(initialTheme);
 
-    // 2. Sag Kutu Neon Braketler Canvas (Tek seferlik cizim)
+    // 2. Sag Kutu Neon Braketler Canvas (Dinamik Renk)
     let cachedRightBracketsCanvas = null;
-    function bakeRightBrackets(bw, bh) {
+    let bakeDebounceTimer = null;
+    function scheduleBake(thm, bw, bh) {
+      if (bakeDebounceTimer) clearTimeout(bakeDebounceTimer);
+      bakeDebounceTimer = setTimeout(() => {
+        bakeDebounceTimer = null;
+        bakeVitruvian(thm);
+        bakeRightBrackets(bw, bh, thm);
+      }, 50);
+    }
+    function bakeRightBrackets(bw, bh, thm) {
       if (bw <= 50 || bh <= 50) return;
+      const curThm = thm || THEMES[configRef.current?.theme] || THEMES.cyan;
       const pad = 12;
       const c = document.createElement('canvas');
       c.width = bw + pad * 2;
       c.height = bh + pad * 2;
       const cCtx = c.getContext('2d');
-      drawNeonBrackets(cCtx, pad, pad, bw, bh, 34, 4);
+      drawNeonBrackets(cCtx, pad, pad, bw, bh, 34, 4, curThm.bracketColor, curThm.bracketGlow);
       cachedRightBracketsCanvas = c;
-    }
-
-    // 2.5 Sol SWITCH Kutusu Neon Braketler Canvas (Tek seferlik cizim)
-    let cachedSwitchBracketsCanvas = null;
-    function bakeSwitchBrackets(rw, rh) {
-      if (rw <= 20 || rh <= 20) return;
-      const pad = 8;
-      const c = document.createElement('canvas');
-      c.width = rw + pad * 2;
-      c.height = rh + pad * 2;
-      const cCtx = c.getContext('2d');
-      drawNeonBrackets(cCtx, pad, pad, rw, rh, 22, 3);
-      cachedSwitchBracketsCanvas = c;
     }
 
     // 2.6 Onbellekli Gradient Nesneleri (Resize sirasinda guncellenir)
@@ -142,13 +167,33 @@ export default function CRTTerminal() {
     // 3. Ayrik Kod Terminal Tuvali (Event-Driven Text Buffer)
     const terminalCanvas = document.createElement('canvas');
     const terminalCtx = terminalCanvas.getContext('2d');
+    const blurredTerminalCanvas = document.createElement('canvas');
+    const blurredTerminalCtx = blurredTerminalCanvas.getContext('2d');
     let terminalDirty = true;
+    let lastAppliedBlur = -1;
     let frameCounter = 0;
 
-    // 4. Three.js Sahnesi ve WebGL Renderer
+    let lastTimeUpdate = 0;
+    let cachedTimeStr = '';
+    function getCachedTime(now) {
+      if (now - lastTimeUpdate > 500) {
+        lastTimeUpdate = now;
+        const d = new Date();
+        cachedTimeStr = d.toTimeString().split(' ')[0];
+      }
+      return cachedTimeStr;
+    }
+
+    // 4. Three.js Sahnesi ve WebGL Renderer (Ultra-Hafif Donanım Hattı)
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: false, 
+      alpha: false,
+      depth: false,
+      stencil: false,
+      powerPreference: 'high-performance'
+    });
     renderer.setPixelRatio(DPR);
     renderer.setSize(width, height);
     renderer.domElement.className = 'crt-webgl-canvas';
@@ -157,6 +202,7 @@ export default function CRTTerminal() {
     const canvasTexture = new THREE.CanvasTexture(sceneCanvas);
     canvasTexture.minFilter = THREE.LinearFilter;
     canvasTexture.magFilter = THREE.LinearFilter;
+    canvasTexture.generateMipmaps = false;
 
     const material = new THREE.ShaderMaterial({
       vertexShader,
@@ -196,12 +242,8 @@ export default function CRTTerminal() {
       const bBoxW = bBoxH;
       const bBoxX = width - pX - bBoxW;
       const bBoxY = pY;
-      const bRectW = Math.max(50, (bBoxX - pX) - pX);
-      const bRectH = Math.min(135, Math.max(88, Math.round(bBoxH * 0.18)));
-
-      setupMatrix(bRectW, bRectH);
-      bakeRightBrackets(bBoxW, bBoxH);
-      bakeSwitchBrackets(bRectW, bRectH);
+      const currentThm = THEMES[configRef.current?.theme] || THEMES.cyan;
+      bakeRightBrackets(bBoxW, bBoxH, currentThm);
 
       // Statik Gradient'lari Yalnizca Resize'da Hesapla
       cachedVigGrad = sceneCtx.createRadialGradient(
@@ -220,29 +262,36 @@ export default function CRTTerminal() {
       cachedRimGrad.addColorStop(1, 'rgba(0, 240, 255, 0.08)');
 
       const tW = Math.max(10, bBoxW - 32);
-      const tH = Math.max(10, bBoxH - 36);
+      const tH = Math.max(10, bBoxH - 54);
       terminalCanvas.width = tW;
       terminalCanvas.height = tH;
+      blurredTerminalCanvas.width = tW;
+      blurredTerminalCanvas.height = tH;
       terminalDirty = true;
     };
 
     handleResize();
     window.addEventListener('resize', handleResize);
 
-    // 5. Ana Cizim & Bukme Dongusu (60 FPS)
+    // 5. Ana Cizim & Bukme Dongusu (30 FPS Sabit Frame-Pacing: CPU ve GPU Tasarrufu)
     let rafId;
+    const TARGET_FPS = 30;
+    const FRAME_INTERVAL = 1000 / TARGET_FPS; // ~33.33ms
+    let lastRenderTime = performance.now();
+    let lastFrameTime = performance.now();
 
     const typeState = {
       isTiradeActive: false,
       cachedTiradeItems: null,
       cachedTiradeLines: null,
-      eventIdx: 0,
+      currentEvent: generateNextUltrakillEvent(),
       lineIdx: 0,
       charIdx: 0,
       completedLines: [],
       pauseUntil: 0,
       eventsSinceTirade: 0,
-      nextTiradeThreshold: 10 + Math.floor(Math.random() * 8)
+      nextTiradeThreshold: 12 + Math.floor(Math.random() * 8),
+      lastConfigUser: configRef.current?.userName || 'ozgur'
     };
 
     function advanceNextEvent() {
@@ -253,34 +302,49 @@ export default function CRTTerminal() {
       if (typeState.eventsSinceTirade >= typeState.nextTiradeThreshold) {
         typeState.isTiradeActive = true;
         typeState.eventsSinceTirade = 0;
-        typeState.nextTiradeThreshold = 12 + Math.floor(Math.random() * 10);
-        typeState.cachedTiradeItems = buildFullPepsiMeltdown("ozgur");
+        typeState.nextTiradeThreshold = 14 + Math.floor(Math.random() * 10);
+        const curUser = configRef.current?.userName || "ozgur";
+        typeState.cachedTiradeItems = buildFullPepsiMeltdown(curUser);
         typeState.cachedTiradeLines = typeState.cachedTiradeItems.map(d => d.text);
       } else {
-        typeState.eventIdx = (typeState.eventIdx + 1) % REGULAR_EVENTS.length;
+        typeState.currentEvent = generateNextUltrakillEvent();
       }
     }
 
-    let lastFrameTime = performance.now();
-
+    const TIRADE_EVENT = { mode: 'tirade' };
     function renderLoop(timestamp) {
+      rafId = requestAnimationFrame(renderLoop);
+
       const now = timestamp || performance.now();
+      const elapsed = now - lastRenderTime;
+
+      // 30 FPS Frame-Pacing: 60Hz/144Hz/165Hz ekranlarda fazlalik kareleri atla,
+      // CPU raster ve GPU VRAM texture upload yukunu yariya/ucte bire dusur.
+      if (elapsed < FRAME_INTERVAL - 3) {
+        return;
+      }
+      lastRenderTime = now - (elapsed % FRAME_INTERVAL);
+
       const dt = Math.min((now - lastFrameTime) / 1000, 0.05);
       lastFrameTime = now;
       frameCounter++;
+
+      const cfg = configRef.current;
+      const currentTheme = getEffectiveTheme(cfg);
 
       // A. SENKRONIZE SIMULASYON VE ALT TUVAL CIZIMI (Tek RAF Orkestratoru)
       if (mazeCtrl && mazeCtrl.update) {
         mazeCtrl.update(dt);
         mazeCtrl.draw();
       }
-      if (matrixCtrl && matrixCtrl.update) {
-        matrixCtrl.update(dt);
-        matrixCtrl.draw();
-      }
 
       // Dinamik Kod, Hata ve Burst Akis Guncellemesi
-      const uName = "ozgur";
+      const uName = cfg?.userName || "ozgur";
+      if (typeState.lastConfigUser !== uName) {
+        typeState.lastConfigUser = uName;
+        typeState.cachedTiradeItems = null;
+        typeState.cachedTiradeLines = null;
+      }
       let currentEvt;
       let currentLines;
       let tiradeItems = null;
@@ -292,9 +356,12 @@ export default function CRTTerminal() {
         }
         tiradeItems = typeState.cachedTiradeItems;
         currentLines = typeState.cachedTiradeLines;
-        currentEvt = { mode: 'tirade' };
+        currentEvt = TIRADE_EVENT;
       } else {
-        currentEvt = REGULAR_EVENTS[typeState.eventIdx];
+        if (!typeState.currentEvent) {
+          typeState.currentEvent = generateNextUltrakillEvent();
+        }
+        currentEvt = typeState.currentEvent;
         currentLines = currentEvt.lines;
       }
 
@@ -303,7 +370,7 @@ export default function CRTTerminal() {
         if (currentEvt.mode === 'tirade') {
           const item = tiradeItems[typeState.lineIdx] || { text: '', delay: 100, isMeltdown: false };
           const currentLine = item.text;
-          const charSpeed = item.isMeltdown ? 6 : 3;
+          const charSpeed = item.isMeltdown ? 9 : 5;
           typeState.charIdx = Math.min(currentLine.length, typeState.charIdx + charSpeed);
 
           if (typeState.charIdx >= currentLine.length) {
@@ -312,44 +379,44 @@ export default function CRTTerminal() {
             typeState.charIdx = 0;
 
             if (typeState.lineIdx >= tiradeItems.length) {
-              typeState.completedLines = []; // Ekrani sifirla (CLEAR)
+              typeState.completedLines.length = 0; // Ekrani sifirla (CLEAR - in-place)
               typeState.lineIdx = 0;
               typeState.charIdx = 0;
               typeState.isTiradeActive = false;
               typeState.cachedTiradeItems = null;
               typeState.cachedTiradeLines = null;
-              typeState.pauseUntil = now + 900;
-              typeState.eventIdx = (typeState.eventIdx + 1) % REGULAR_EVENTS.length;
+              typeState.pauseUntil = now + 400;
+              typeState.currentEvent = generateNextUltrakillEvent();
             } else {
               const isPreMeltdown = (typeState.lineIdx === PEPSI_DIALOGUE_SRC.length);
               if (isPreMeltdown) {
-                typeState.pauseUntil = now + 1400;
+                typeState.pauseUntil = now + 650;
               } else {
-                typeState.pauseUntil = now + (item.isMeltdown ? Math.max(25, item.delay) : Math.max(70, Math.min(600, item.delay * 2)));
+                typeState.pauseUntil = now + (item.isMeltdown ? Math.max(15, item.delay * 0.6) : Math.max(40, item.delay * 0.75));
               }
             }
           }
         } else if (currentEvt.mode === 'burst') {
-          const burstSize = Math.min(currentLines.length - typeState.lineIdx, 3 + Math.floor(Math.random() * 2));
+          const burstSize = Math.min(currentLines.length - typeState.lineIdx, 4 + Math.floor(Math.random() * 3));
           for (let b = 0; b < burstSize; b++) {
             typeState.completedLines.push(currentLines[typeState.lineIdx]);
             typeState.lineIdx++;
           }
           if (typeState.lineIdx >= currentLines.length) {
-            typeState.pauseUntil = now + 900;
+            typeState.pauseUntil = now + 320;
             advanceNextEvent();
           } else {
-            typeState.pauseUntil = now + 40;
+            typeState.pauseUntil = now + 25;
           }
         } else if (currentEvt.mode === 'error') {
           const errLine = currentLines[typeState.lineIdx] || '';
           typeState.completedLines.push(errLine);
           typeState.lineIdx++;
           if (typeState.lineIdx >= currentLines.length) {
-            typeState.pauseUntil = now + 1600;
+            typeState.pauseUntil = now + 500;
             advanceNextEvent();
           } else {
-            typeState.pauseUntil = now + 90;
+            typeState.pauseUntil = now + 40;
           }
         } else if (currentEvt.mode === 'scramble') {
           const currentLine = currentLines[typeState.lineIdx] || '';
@@ -357,17 +424,17 @@ export default function CRTTerminal() {
             const firstNonSpace = currentLine.search(/\S|$/);
             typeState.charIdx = firstNonSpace;
           }
-          typeState.charIdx = Math.min(currentLine.length, typeState.charIdx + 3);
+          typeState.charIdx = Math.min(currentLine.length, typeState.charIdx + 6);
 
           if (typeState.charIdx >= currentLine.length) {
             typeState.completedLines.push(currentLine);
             typeState.lineIdx++;
             typeState.charIdx = 0;
             if (typeState.lineIdx >= currentLines.length) {
-              typeState.pauseUntil = now + 900;
+              typeState.pauseUntil = now + 300;
               advanceNextEvent();
             } else {
-              typeState.pauseUntil = now + 50;
+              typeState.pauseUntil = now + 25;
             }
           }
         } else {
@@ -377,23 +444,23 @@ export default function CRTTerminal() {
             const firstNonSpace = currentLine.search(/\S|$/);
             typeState.charIdx = firstNonSpace;
           }
-          typeState.charIdx = Math.min(currentLine.length, typeState.charIdx + 2);
+          typeState.charIdx = Math.min(currentLine.length, typeState.charIdx + 4);
 
           if (typeState.charIdx >= currentLine.length) {
             typeState.completedLines.push(currentLine);
             typeState.lineIdx++;
             typeState.charIdx = 0;
             if (typeState.lineIdx >= currentLines.length) {
-              typeState.pauseUntil = now + 900;
+              typeState.pauseUntil = now + 320;
               advanceNextEvent();
             } else {
-              typeState.pauseUntil = now + 50;
+              typeState.pauseUntil = now + 25;
             }
           }
         }
 
         if (typeState.completedLines.length > 45 && !typeState.isTiradeActive) {
-          typeState.completedLines = typeState.completedLines.slice(-30);
+          typeState.completedLines.splice(0, typeState.completedLines.length - 30);
         }
       }
 
@@ -413,59 +480,60 @@ export default function CRTTerminal() {
       const boxX = width - padX - boxW;
       const boxY = padY;
 
-      // B. SOL TARAF: UST YATAY BASLIK BANNERI (Arkasinda Akan CultStream Matrix + SWITCH)
-      const rectX = padX;
-      const rectY = boxY;
-      const rectW = Math.max(50, (boxX - padX) - rectX);
-      const rectH = Math.min(135, Math.max(88, Math.round(boxH * 0.18)));
+      // Dinamik Tema Degisimi Takibi (Ozel Hex ve Hazir Temalar)
+      const currentThemeKey = currentTheme.id + '_' + currentTheme.primary;
+      if (lastThemeKey !== currentThemeKey) {
+        lastThemeKey = currentThemeKey;
+        scheduleBake(currentTheme, boxW, boxH);
+      }
 
-      if (rectW > 60 && rectH > 40) {
-        sceneCtx.save();
-        sceneCtx.beginPath();
-        sceneCtx.rect(rectX, rectY, rectW, rectH);
-        sceneCtx.clip();
+      // B. SOL UST: OPERATOR KIMLIGI, CANLI DIJITAL SAAT & TELEMETRI KUTUSU
+      if (cfg?.showClock !== false) {
+        const topH = 46;
+        const maxTopW = 360;
+        const availW = boxX - padX * 2;
+        const topW = Math.min(maxTopW, availW);
 
-        // 1. Koyu zemin
-        sceneCtx.fillStyle = '#050608';
-        sceneCtx.fillRect(rectX, rectY, rectW, rectH);
+        if (topW > 140) {
+          const topX = padX;
+          const topY = padY;
 
-        // 2. Canli Akan Matrix Akisi (CultStream)
-        if (matrixCanvas.width > 0 && matrixCanvas.height > 0) {
-          sceneCtx.drawImage(matrixCanvas, rectX, rectY, rectW, rectH);
+          sceneCtx.save();
+          // Panel arka plani ve cerceve
+          sceneCtx.fillStyle = currentTheme.hudBg || 'rgba(0, 18, 30, 0.75)';
+          sceneCtx.fillRect(topX, topY, topW, topH);
+          sceneCtx.strokeStyle = currentTheme.hudBorder || 'rgba(0, 240, 255, 0.45)';
+          sceneCtx.lineWidth = 1;
+          sceneCtx.strokeRect(topX, topY, topW, topH);
+
+          // Neon kose L-braketleri
+          drawNeonBrackets(sceneCtx, topX, topY, topW, topH, 8, 2, currentTheme.bracketColor, currentTheme.bracketGlow);
+
+          // Sol minik durum gosterge ledi (pulsing)
+          const ledPulse = Math.sin(now * 0.005) * 0.35 + 0.65;
+          sceneCtx.beginPath();
+          sceneCtx.arc(topX + 12, topY + 16, 2.5, 0, Math.PI * 2);
+          sceneCtx.fillStyle = currentTheme.primary;
+          sceneCtx.globalAlpha = ledPulse;
+          sceneCtx.fill();
+          sceneCtx.globalAlpha = 1.0;
+
+          // Logo / Operator Ismi
+          sceneCtx.font = 'bold 11px "VCR OSD Mono", "Share Tech Mono", monospace';
+          sceneCtx.fillStyle = currentTheme.primary;
+          sceneCtx.shadowColor = currentTheme.glowPrimary;
+          sceneCtx.shadowBlur = 4;
+          const opName = (cfg?.userName || 'V1').toUpperCase();
+          sceneCtx.fillText(opName, topX + 22, topY + 19);
+
+          // Canli Saat
+          sceneCtx.font = '10px "VCR OSD Mono", "Share Tech Mono", monospace';
+          sceneCtx.fillStyle = currentTheme.accent || '#ede8dc';
+          sceneCtx.shadowBlur = 0;
+          const timeStr = getCachedTime(now);
+          sceneCtx.fillText(`TIME: ${timeStr}`, topX + 22, topY + 36);
+          sceneCtx.restore();
         }
-
-        // 3. Yari saydam zine dokusu (vintage kagit greni)
-        if (cachedZinePattern) {
-          try {
-            sceneCtx.save();
-            sceneCtx.globalAlpha = 0.24;
-            sceneCtx.fillStyle = cachedZinePattern;
-            sceneCtx.fillRect(rectX, rectY, rectW, rectH);
-            sceneCtx.restore();
-          } catch (e) {}
-        }
-
-        // 4. Koyu karartma katmani (metin okunabilirligi ve derinlik icin)
-        sceneCtx.fillStyle = 'rgba(0, 0, 0, 0.42)';
-        sceneCtx.fillRect(rectX, rectY, rectW, rectH);
-
-        // 5. 'SWITCH' Yazisi: VCR OSD Mono fontu ile akan matrix'in onunde parildar
-        const titleSize = Math.max(34, Math.min(68, Math.floor(rectH * 0.44)));
-        sceneCtx.font = `bold ${titleSize}px "VCR OSD Mono", "VCR OST Mono", monospace`;
-        sceneCtx.textAlign = 'center';
-        sceneCtx.textBaseline = 'middle';
-        sceneCtx.fillStyle = '#ede8dc';
-        sceneCtx.shadowColor = 'rgba(237, 232, 220, 0.85)';
-        sceneCtx.shadowBlur = 12;
-        sceneCtx.fillText('SWITCH', rectX + rectW / 2, rectY + rectH / 2);
-
-        // 6. Kose kirmizi neon braketler (Onbellekli Tuval)
-        if (cachedSwitchBracketsCanvas) {
-          sceneCtx.drawImage(cachedSwitchBracketsCanvas, rectX - 8, rectY - 8);
-        } else {
-          drawNeonBrackets(sceneCtx, rectX, rectY, rectW, rectH, 22, 3);
-        }
-        sceneCtx.restore();
       }
 
       // C. SAG TARAF: ANATOMI KARE PANELI
@@ -475,9 +543,9 @@ export default function CRTTerminal() {
         sceneCtx.rect(boxX, boxY, boxW, boxH);
         sceneCtx.clip();
 
-        // 1. DONANIM HIZLANDIRMALI BUZLU CAM (Throttled 30 FPS Bilinear Blit)
+        // 1. DONANIM HIZLANDIRMALI BUZLU CAM (Throttled 15 FPS)
         try {
-          if (frameCounter % 2 === 0) {
+          if (frameCounter % 4 === 0) {
             frostCtx.drawImage(
               mazeCanvas,
               boxX, boxY, boxW, boxH,
@@ -486,7 +554,7 @@ export default function CRTTerminal() {
           }
           sceneCtx.save();
           sceneCtx.imageSmoothingEnabled = true;
-          sceneCtx.imageSmoothingQuality = 'medium';
+          sceneCtx.imageSmoothingQuality = 'low';
           sceneCtx.drawImage(frostCanvas, 0, 0, 96, 96, boxX, boxY, boxW, boxH);
           sceneCtx.restore();
         } catch (e) {}
@@ -513,12 +581,12 @@ export default function CRTTerminal() {
 
         // 3. JAVASCRIPT TYPEWRITER & BURST KOD TERMINALI (Event-Driven Offscreen Buffer)
         const termPadX = 16;
-        const termPadY = 18;
+        const termPadY = 36;
         const termX = boxX + termPadX;
         const termY = boxY + termPadY;
         const termW = Math.max(10, boxW - termPadX * 2);
-        const termH = Math.max(10, boxH - termPadY * 2);
-        const lineH = 14;
+        const termH = Math.max(10, boxH - termPadY - 18);
+        const lineH = 16;
         const maxVisible = Math.floor(termH / lineH);
 
         if (terminalCanvas.width !== termW || terminalCanvas.height !== termH) {
@@ -557,10 +625,49 @@ export default function CRTTerminal() {
             }
             displayLineIdx++;
           }
+
+          const blurAmount = (cfg?.codeBlur !== undefined) ? cfg.codeBlur : 0.8;
+          if (blurredTerminalCanvas.width !== termW || blurredTerminalCanvas.height !== termH) {
+            blurredTerminalCanvas.width = termW;
+            blurredTerminalCanvas.height = termH;
+          }
+          blurredTerminalCtx.clearRect(0, 0, termW, termH);
+          if (blurAmount > 0) {
+            blurredTerminalCtx.filter = `blur(${blurAmount}px)`;
+          } else {
+            blurredTerminalCtx.filter = 'none';
+          }
+          blurredTerminalCtx.drawImage(terminalCanvas, 0, 0);
+          blurredTerminalCtx.filter = 'none';
+          lastAppliedBlur = blurAmount;
+
           terminalDirty = false;
         }
 
-        sceneCtx.drawImage(terminalCanvas, termX, termY);
+        // 3.0 PANEL BASLIGI & AYIRICI HIZALAMA CIZGISI
+        sceneCtx.save();
+        sceneCtx.font = 'bold 9px "Share Tech Mono", monospace';
+        sceneCtx.fillStyle = currentTheme.glowPrimary;
+        sceneCtx.shadowColor = currentTheme.primary;
+        sceneCtx.shadowBlur = 4;
+        sceneCtx.textAlign = 'left';
+        sceneCtx.textBaseline = 'middle';
+        sceneCtx.fillText('// V1_ANATOMICAL_MATRIX', boxX + 16, boxY + 16);
+
+        sceneCtx.strokeStyle = currentTheme.hudBorder;
+        sceneCtx.lineWidth = 1;
+        sceneCtx.beginPath();
+        sceneCtx.moveTo(boxX + 16, boxY + 28);
+        sceneCtx.lineTo(boxX + boxW - 16, boxY + 28);
+        sceneCtx.stroke();
+        sceneCtx.restore();
+
+        // 3.1 OPTIK YUMUSATILMIS TERMINAL METNI (Sifir GPU Filter Yuklu Dogrudan Blit)
+        sceneCtx.save();
+        const textOpacity = (cfg?.codeOpacity !== undefined) ? cfg.codeOpacity : 0.85;
+        sceneCtx.globalAlpha = textOpacity;
+        sceneCtx.drawImage(blurredTerminalCanvas, termX, termY);
+        sceneCtx.restore();
 
         // 3.4 CRT TRINITRON FOSFOR AGI & SCANLINES
         if (!scanPattern) {
@@ -578,25 +685,27 @@ export default function CRTTerminal() {
         const chipY = boxY + 14;
 
         sceneCtx.save();
-        sceneCtx.fillStyle = 'rgba(0, 18, 30, 0.75)';
+        sceneCtx.fillStyle = currentTheme.hudBg;
         sceneCtx.fillRect(chipX, chipY - 10, chipW, chipH);
-        sceneCtx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
+        sceneCtx.strokeStyle = currentTheme.hudBorder;
         sceneCtx.lineWidth = 1;
         sceneCtx.strokeRect(chipX, chipY - 10, chipW, chipH);
 
         const pulseAlpha = Math.sin(now * 0.007) * 0.4 + 0.6;
         sceneCtx.beginPath();
         sceneCtx.arc(chipX + 8, chipY - 2.5, 2.5, 0, Math.PI * 2);
-        sceneCtx.fillStyle = `rgba(0, 240, 255, ${pulseAlpha})`;
+        sceneCtx.fillStyle = currentTheme.primary;
+        sceneCtx.globalAlpha = pulseAlpha;
         sceneCtx.fill();
+        sceneCtx.globalAlpha = 1.0;
 
         sceneCtx.font = '9px "Share Tech Mono", monospace';
-        sceneCtx.fillStyle = '#00f0ff';
+        sceneCtx.fillStyle = currentTheme.primary;
         const tickVal = Math.floor(now * 0.06) % 99999;
-        sceneCtx.fillText(`TICK:${tickVal.toString().padStart(5, '0')}  SYS:60Hz`, chipX + 16, chipY);
+        sceneCtx.fillText(`TICK:${tickVal.toString().padStart(5, '0')}  SYS:NOMINAL`, chipX + 16, chipY);
         sceneCtx.restore();
 
-        // 4. ANATOMI CIZIMI (Saf Cyan Fosfor Pariltisi - 0ms CPU Blur)
+        // 4. ANATOMI CIZIMI (Dinamik Neon Fosfor Pariltisi - 0ms CPU Blur)
         const vSize = Math.round(boxH * 1.076);
         const vY = Math.round(boxY - vSize * (32 / 1080));
         const vX = Math.round(boxX + boxW - vSize * (1036 / 1080));
@@ -615,22 +724,20 @@ export default function CRTTerminal() {
 
         sceneCtx.restore(); // clip sonu
 
-        // 4 KOSE PARLAK KIRMIZI L-BRAKETLERI
+        // 4 KOSE PARLAK L-BRAKETLERI
         if (cachedRightBracketsCanvas) {
           sceneCtx.drawImage(cachedRightBracketsCanvas, boxX - 12, boxY - 12);
         } else {
-          drawNeonBrackets(sceneCtx, boxX, boxY, boxW, boxH, 34, 4);
+          drawNeonBrackets(sceneCtx, boxX, boxY, boxW, boxH, 34, 4, currentTheme.bracketColor, currentTheme.bracketGlow);
         }
       }
 
       // --- THREE.JS WEBGL RENDER ---
       canvasTexture.needsUpdate = true;
-      material.uniforms.uCurvature.value = crtConfig.curvature;
-      material.uniforms.uPhosphorGrid.value = crtConfig.phosphorGrid;
-      material.uniforms.uVignette.value = crtConfig.vignette;
+      material.uniforms.uCurvature.value = (cfg?.crtCurvature !== undefined) ? cfg.crtCurvature : crtConfig.curvature;
+      material.uniforms.uPhosphorGrid.value = (cfg?.crtPhosphorGrid !== undefined) ? cfg.crtPhosphorGrid : crtConfig.phosphorGrid;
+      material.uniforms.uVignette.value = (cfg?.crtVignette !== undefined) ? cfg.crtVignette : crtConfig.vignette;
       renderer.render(scene, camera);
-
-      rafId = requestAnimationFrame(renderLoop);
     }
 
     rafId = requestAnimationFrame(renderLoop);
@@ -639,7 +746,6 @@ export default function CRTTerminal() {
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', handleResize);
       if (mazeCtrl && mazeCtrl.destroy) mazeCtrl.destroy();
-      if (matrixCtrl && matrixCtrl.destroy) matrixCtrl.destroy();
 
       // Three.js eksiksiz VRAM ve nesne temizligi
       scene.remove(quad);
@@ -653,7 +759,6 @@ export default function CRTTerminal() {
 
       // Event & Image referanslarini kes
       vitruvianLedImg.onload = null;
-      zineTextureImg.onload = null;
 
       // 2D Offscreen Canvas bitmap buffer'larini bellekten dusur
       const zeroCanvas = (c) => {
@@ -663,20 +768,19 @@ export default function CRTTerminal() {
       };
       zeroCanvas(sceneCanvas);
       zeroCanvas(mazeCanvas);
-      zeroCanvas(matrixCanvas);
       zeroCanvas(frostCanvas);
       zeroCanvas(scanPatternCanvas);
       zeroCanvas(terminalCanvas);
+      zeroCanvas(blurredTerminalCanvas);
       zeroCanvas(cachedVitruvianCanvas);
       zeroCanvas(cachedRightBracketsCanvas);
-      zeroCanvas(cachedSwitchBracketsCanvas);
     };
   }, []);
 
   return (
     <div className="crt-terminal-wrapper">
       <div className="crt-monitor-bezel" ref={mountRef} />
-      <span style={{ fontFamily: "VCR OSD Mono", position: "absolute", opacity: 0, pointerEvents: "none", top: -9999 }}>SWITCH</span>
+      <span style={{ fontFamily: "VCR OSD Mono", position: "absolute", opacity: 0, pointerEvents: "none", top: -9999 }}>ULTRAKILL</span>
     </div>
   );
 }

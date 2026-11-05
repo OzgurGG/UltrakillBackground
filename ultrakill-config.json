@@ -1,0 +1,18 @@
+{
+        "theme": "custom",
+        "customColor": "#ffffff",
+        "titleText": "ULTRAKILL",
+        "topLeftTitle": "ULTRAKILL",
+        "userName": "V1",
+        "subText1": "MANKIND IS DEAD. • BLOOD IS FUEL. • HELL IS FULL.",
+        "subText2": "// TARGET: ACQUIRED • REACTION_BIAS: 0.08ms • REFUEL_CYCLE: ACTIVE",
+        "showClock": false,
+        "crtCurvature": 0.14,
+        "crtPhosphorGrid": 0.45,
+        "crtVignette": 0.28,
+        "panelTitle": "// SPEC_SYS: V1_ANATOMICAL_MATRIX",
+        "fitToTaskbar": true,
+        "taskbarTheme": "dark",
+        "codeBlur": 0,
+        "codeOpacity": 0.85
+}

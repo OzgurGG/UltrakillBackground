@@ -1,0 +1,26 @@
+{
+  "name": "switch",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "electron-main.cjs",
+  "scripts": {
+    "start": "vite build && electron .",
+    "package": "vite build && electron-packager . SWITCH --platform=win32 --arch=x64 --out=release-builds --overwrite --extra-resource=wallpaper-injector.exe --ignore=\"^(src|vite\\.config\\.js|wallpaper-injector\\.cs)\"",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^45.2.1",
+    "sharp": "^0.35.5",
+    "vite": "^6.0.7"
+  }
+}

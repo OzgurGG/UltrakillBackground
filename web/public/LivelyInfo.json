@@ -1,0 +1,14 @@
+{
+  "AppVersion": "1.0.0.0",
+  "Title": "SWITCH CRT Terminal",
+  "Thumbnail": "test-led-cyan.png",
+  "Preview": "test-led-cyan.png",
+  "Desc": "Cyberpunk Gothic CRT Terminal & Autorouter Simulation",
+  "Author": "ozgur",
+  "License": "",
+  "Contact": "",
+  "Type": 1,
+  "FileName": "index.html",
+  "Arguments": ""
+}
+

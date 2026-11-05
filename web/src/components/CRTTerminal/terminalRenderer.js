@@ -1,7 +1,11 @@
-export const JS_KEYWORDS = new Set([
-  'const', 'let', 'var', 'function', 'return', 'if', 'else', 'while', 'for',
-  'async', 'await', 'class', 'constructor', 'new', 'try', 'catch', 'throw',
-  'break', 'super', 'true', 'false', 'null', 'undefined', 'extends'
+export const CODE_KEYWORDS = new Set([
+  '#INCLUDE', '#PRAGMA', '#DEFINE', '#ASSERT', '#UNDEF', '#ALIGNAS', 'FROM',
+  'typedef', 'struct', 'union', 'void', 'matter', 'unsigned', 'long', 'int',
+  'short', 'char', 'const', 'volatile', 'static', 'extern', 'inline', 'return',
+  'if', 'else', 'while', 'for', 'sizeof', 'NULL', 'null', 'true', 'false',
+  'INTERPRET', 'ORDER', 'VECTOR', 'AXIS', 'CATALYST', 'PRIME', 'SUBSTRATE',
+  'REINTERPRET_CAST', 'ALLOC_TRANSMUTE', 'depth_t', 'uint64_t', 'uint32_t', 'uint16_t', 'uint8_t',
+  'leaf', 'branch', 'tree', 'root', 'seed', 'crucible', 'athanor', 'vessel', 'chassis', 'matrix'
 ]);
 
 export const SCRAMBLE_CHARS = '!@#$%^&*<>[]{}0123456789ABCDEFλΩΞ';
@@ -356,57 +360,69 @@ export function renderCodeLine(ctx, text, x, y, isTyping, now, termW) {
     return;
   }
 
-  // 18. STANDART JAVASCRIPT KODLARI (Onbellekli Tokenizer)
-  let parsedTokens = tokenCache.get(text);
+  // 18. ULTRAKILL C / HERMETIK KOD RENKLENDIRME (Onbellekli Tokenizer & Belirgin Tab Merdiveni)
+  const leadingMatch = text.match(/^[ \t]+/);
+  let indentPx = 0;
+  let codeStr = text;
+  if (leadingMatch) {
+    const rawLead = leadingMatch[0];
+    const spacesCount = rawLead.replace(/\t/g, '    ').length;
+    // Her 4 bosluk = 44 piksellik belirgin, genis IDE merdiven basamagi
+    const indentLevel = spacesCount / 4;
+    indentPx = Math.round(indentLevel * 44);
+    codeStr = text.substring(rawLead.length);
+  }
+
+  let parsedTokens = tokenCache.get(codeStr);
   if (!parsedTokens) {
-    const tokens = text.split(/([a-zA-Z0-9_$]+|'[^']*'|"[^"]*"|`[^`]*`|\s+|[^\s\w])/g);
+    const tokens = codeStr.split(/(#[a-zA-Z0-9_$]+|[a-zA-Z0-9_$]+|'[^']*'|"[^"]*"|`[^`]*`|\s+|[^\s\w])/g);
     parsedTokens = [];
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
       if (!token) continue;
-      let fill = 'rgba(215, 240, 255, 0.78)';
-      let font = '11px "Share Tech Mono", monospace';
-      if (JS_KEYWORDS.has(token)) {
-        fill = '#00f0ff'; font = 'bold 11px "Share Tech Mono", monospace';
+
+      if (/^\s+$/.test(token)) {
+        parsedTokens.push({ token, fill: 'transparent', font: '12px "VCR OSD Mono", monospace' });
+        continue;
+      }
+
+      let fill = 'rgba(235, 245, 255, 0.9)';
+      let font = '12px "VCR OSD Mono", "Share Tech Mono", monospace';
+      if (CODE_KEYWORDS.has(token) || token.startsWith('#')) {
+        fill = '#00f0ff'; font = 'bold 12px "VCR OSD Mono", "Share Tech Mono", monospace';
       } else if (token.startsWith("'") || token.startsWith('"') || token.startsWith('`')) {
-        fill = '#ffbb33';
-      } else if (/^\d+$/.test(token)) {
+        fill = '#ffcc55';
+      } else if (/^\d+$/.test(token) || token.startsWith('0x')) {
         fill = '#39ff14';
       } else if (/[{}()[\]]/.test(token)) {
-        fill = '#ffffff'; font = 'bold 11px "Share Tech Mono", monospace';
+        fill = '#ffffff'; font = 'bold 12px "VCR OSD Mono", "Share Tech Mono", monospace';
       } else if (/[=><!+\-*/&|:;.,]/.test(token)) {
         fill = 'rgba(0, 240, 255, 0.75)';
       }
-      parsedTokens.push({ token, fill, font, w: token.length * CHAR_W });
+      parsedTokens.push({ token, fill, font });
     }
 
-    // Yalnizca tamamlanmis, statik satirlari onbellege al (daktilo ara durumlarini ve scramble'i onbellege alma)
     if (!isTyping) {
-      if (tokenCache.size > 160) {
-        // Kademeli LRU tahliyesi: En eski 30 anahtari sil (ani GC patlamasini onler)
-        let removed = 0;
-        for (const key of tokenCache.keys()) {
-          tokenCache.delete(key);
-          if (++removed >= 30) break;
-        }
+      if (tokenCache.size > 250) {
+        tokenCache.clear();
       }
-      tokenCache.set(text, parsedTokens);
+      tokenCache.set(codeStr, parsedTokens);
     }
   }
 
-  let curX = x;
+  let curX = x + indentPx;
   for (let i = 0; i < parsedTokens.length; i++) {
     const item = parsedTokens[i];
     ctx.fillStyle = item.fill;
     ctx.font = item.font;
     ctx.fillText(item.token, curX, y);
-    curX += item.w;
+    curX += ctx.measureText(item.token).width;
   }
 
   if (isTyping) {
     if (Math.floor(now * 0.005) % 2 === 0) {
       ctx.fillStyle = '#00f0ff';
-      ctx.fillRect(curX + 2, y - 9, 6, 12);
+      ctx.fillRect(curX + 2, y - 10, 7, 13);
     }
   }
 }

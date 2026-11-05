@@ -49,7 +49,11 @@ export function initCultStream(cvs, layer = 'back', autoLoop = false) {
    let raf, w, h, cols, rows;
    let grid = [];
    let streams = [];
-   const glowCells = [];
+   const MAX_GLOW = 256;
+   const glowPx = new Float32Array(MAX_GLOW);
+   const glowPy = new Float32Array(MAX_GLOW);
+   const glowIntensity = new Float32Array(MAX_GLOW);
+   let glowCount = 0;
 
    function build() {
       const p = cvs.parentElement;
@@ -98,7 +102,7 @@ export function initCultStream(cvs, layer = 'back', autoLoop = false) {
    function createStream(totalCols) {
       return {
          headPos: Math.random() * (totalCols + 40) - 10,
-         speed: 5.0 + Math.random() * 10.0,
+         speed: 8.0 + Math.random() * 12.0,
          trailLen: 8 + Math.random() * 15,
          opacity: 0.6 + Math.random() * 0.4
       };
@@ -122,7 +126,7 @@ export function initCultStream(cvs, layer = 'back', autoLoop = false) {
             s.headPos -= s.speed * dt;
             if (s.headPos + s.trailLen < -2) {
                s.headPos = cols + 2 + Math.random() * 20;
-               s.speed = 5.0 + Math.random() * 10.0;
+               s.speed = 8.0 + Math.random() * 12.0;
             }
          }
       }
@@ -173,8 +177,8 @@ export function initCultStream(cvs, layer = 'back', autoLoop = false) {
       ctx.textBaseline = 'middle';
       ctx.font = 'bold 14px monospace';
 
-      // Çizim (Yeniden kullanilan dizi ve LUT ile sifir GC)
-      glowCells.length = 0;
+      // Çizim (Önceden ayrılmış Typed Array ile sıfır GC)
+      glowCount = 0;
       for (let r = 0; r < rows; r++) {
          for (let c = 0; c < cols; c++) {
             const cell = grid[r][c];
@@ -205,7 +209,12 @@ export function initCultStream(cvs, layer = 'back', autoLoop = false) {
             if (isHead) {
                ctx.fillStyle = HEAD_LUT[lutIdx];
                ctx.fillText(cell.char, px, py);
-               glowCells.push({ px, py, intensity: maxIntensity });
+               if (glowCount < MAX_GLOW) {
+                  glowPx[glowCount] = px;
+                  glowPy[glowCount] = py;
+                  glowIntensity[glowCount] = maxIntensity;
+                  glowCount++;
+               }
             } else {
                ctx.fillStyle = COLOR_LUT[lutIdx];
                ctx.fillText(cell.char, px, py);
@@ -213,12 +222,11 @@ export function initCultStream(cvs, layer = 'back', autoLoop = false) {
          }
       }
 
-      if (glowCells.length > 0 && glowSprite) {
+      if (glowCount > 0 && glowSprite) {
          ctx.globalCompositeOperation = 'screen';
-         for (let i = 0; i < glowCells.length; i++) {
-            const g = glowCells[i];
-            ctx.globalAlpha = Math.min(1.0, g.intensity);
-            ctx.drawImage(glowSprite, g.px - 16, g.py - 16);
+         for (let i = 0; i < glowCount; i++) {
+            ctx.globalAlpha = Math.min(1.0, glowIntensity[i]);
+            ctx.drawImage(glowSprite, glowPx[i] - 16, glowPy[i] - 16);
          }
          ctx.globalAlpha = 1.0;
          ctx.globalCompositeOperation = 'source-over';
