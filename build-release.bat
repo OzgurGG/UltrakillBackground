@@ -38,6 +38,10 @@ copy /y "csharp\WebView2Loader.dll" "%PKG_DIR%\WebView2Loader.dll" >nul
 copy /y "csharp\WebView2Loader.dll" "%PKG_DIR%\x64\WebView2Loader.dll" >nul
 copy /y "csharp\WebView2Loader.dll" "%PKG_DIR%\runtimes\win-x64\native\WebView2Loader.dll" >nul
 
+if exist "Baslat.bat" (
+    copy /y "Baslat.bat" "%PKG_DIR%\Baslat.bat" >nul
+)
+
 if exist "ultrakill-config.json" (
     copy /y "ultrakill-config.json" "%PKG_DIR%\ultrakill-config.json" >nul
 ) else if exist "switch-config.json" (

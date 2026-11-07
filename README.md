@@ -20,10 +20,12 @@ Three.js ve React tabanlı WebGL CRT filtrelerini C# WinForms WebView2 kabuğund
 
 1. **[Releases](../../releases/latest)** sekmesinden en güncel `UltrakillBackground-vX.X.X.zip` dosyasını indirin.
 2. Arşivi bir klasöre çıkartın.
-3. `UltrakillBackground.exe` dosyasını çalıştırın.
-4. Ayarları değiştirmek için sağ alttaki sistem tepsisindeki simgeye sağ tıklayıp **Ayarlar (Settings)...** seçeneğini açın.
+3. Klasördeki **`Baslat.bat`** veya `UltrakillBackground.exe` dosyasını çalıştırın.
+4. Ayarları değiştirmek için sağ alttaki sistem tepsisindeki (Tray) V1 simgesine sağ tıklayıp **Ayarlar (Settings)...** seçeneğini açın.
 
-> **Not:** Windows SmartScreen "Kişisel bilgisayarınızı korudu" uyarısı verirse, bağımsız geliştirici exe'si olduğu için **"Ek bilgi" -> "Yine de çalıştır"** demeniz yeterlidir.
+> **Önemli (Windows Güvenlik Uyarısı / Akıllı Uygulama Denetimi):**
+> * **Akıllı Uygulama Denetimi (Smart App Control) Engellerse:** Doğrudan **`Baslat.bat`** dosyasını çalıştırın veya `UltrakillBackground.exe` dosyasına **Sağ Tık -> Özellikler (Properties)** açıp en alttaki **"Engellemeyi Kaldır" (Unblock)** kutucuğunu işaretleyin.
+> * **SmartScreen Uyarısı Çıkarsa:** **"Ek bilgi" -> "Yine de çalıştır"** demeniz yeterlidir.
 
 ---
 
@@ -46,3 +48,4 @@ Projeyi kendi bilgisayarınızda derlemek için:
 ## Lisans
 
 Bu proje kişisel eğlence ve ULTRAKILL hayran çalışması olarak hazırlanmıştır. ULTRAKILL ve ilgili tüm görseller Arsi "Hakita" Patala ve New Blood Interactive'e aittir.
+

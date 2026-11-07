@@ -58,6 +58,10 @@ jobs:
           Copy-Item "csharp\WebView2Loader.dll" "$pkgDir\x64\"
           Copy-Item "csharp\WebView2Loader.dll" "$pkgDir\runtimes\win-x64\native\"
 
+          if (Test-Path "Baslat.bat") {
+            Copy-Item "Baslat.bat" "$pkgDir\"
+          }
+
           if (Test-Path "ultrakill-config.json") {
             Copy-Item "ultrakill-config.json" "$pkgDir\"
           }
@@ -66,21 +70,25 @@ jobs:
 
           # README dosyasini ekle
           @'
-          ========================================================================
-            ULTRAKILL DYNAMIC DESKTOP WALLPAPER (V1 CRT VISUALIZER)
-          ========================================================================
+========================================================================
+  ULTRAKILL DYNAMIC DESKTOP WALLPAPER (V1 CRT VISUALIZER)
+========================================================================
 
-          KULLANIM:
-          1. "UltrakillBackground.exe" dosyasina cift tiklayarak baslatin.
-          2. Uygulama otomatik olarak masaustu arka planiniza yerlesir.
-          3. Sag alttaki sistem tepsisindeki (Windows Tray) simgesine sag tiklayarak
-             "Ayarlar (Settings)..." penceresini acabilir veya cikis yapabilirsiniz.
+KULLANIM:
+1. "Baslat.bat" dosyasina cift tiklayarak baslatin (veya "UltrakillBackground.exe").
+2. Uygulama otomatik olarak masaustu arka planiniza yerlesir.
+3. Sag alttaki sistem tepsisindeki (Windows Tray) simgesine sag tiklayarak
+   "Ayarlar (Settings)..." penceresini acabilir veya cikis yapabilirsiniz.
 
-          GEREKSINIMLER:
-          - Windows 10 (64-bit) veya Windows 11.
-          - Edge WebView2 Runtime (Windows 10/11'de otomatik olarak kuruludur).
-          ========================================================================
-          '@ | Set-Content -Path "$pkgDir\README.txt" -Encoding UTF8
+------------------------------------------------------------------------
+AKILLI UYGULAMA DENETIMI / SMARTSCREEN UYARISI ALIRSANIZ:
+------------------------------------------------------------------------
+Windows 11 "Akilli Uygulama Denetimi guvenli olmayabilecek bir uygulamayi engelledi" derse:
+- Ya doğrudan "Baslat.bat" dosyasini calistirin,
+- Ya da "UltrakillBackground.exe" dosyasina Sag Tik -> Ozellikler (Properties) -> 
+  En alttaki "Engellemeyi Kaldir" (Unblock) kutucugunu isaretleyip "Tamam" deyin.
+========================================================================
+'@ | Set-Content -Path "$pkgDir\README.txt" -Encoding UTF8
 
           # ZIP arsivini olustur
           $tag = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME } else { "v1.0.0" }
@@ -97,3 +105,4 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
+
